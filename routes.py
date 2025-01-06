@@ -1798,7 +1798,7 @@ def generate_ai_insights(orders, products):
             max_tokens=500
         )
         
-        return response.choices[0].message.content
+        return response.choices[0].message['content']
     except Exception as e:
         return f"Error generating insights: {str(e)}"
 
@@ -1898,9 +1898,8 @@ def ai_assistant():
     try:
         message = request.json.get('message', '')
         
-        # Use OpenAI to understand the request
-        client = openai.OpenAI()
-        response = client.chat.completions.create(
+        # Use OpenAI with older syntax
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": """You are a bakery assistant. Extract the product name and quantity from the user's message.
@@ -1913,7 +1912,7 @@ def ai_assistant():
         # Parse the AI response
         try:
             import json
-            ai_response = json.loads(response.choices[0].message.content)
+            ai_response = json.loads(response.choices[0].message['content'])
             product_name = ai_response.get('product_name')
             quantity = ai_response.get('quantity')
             
