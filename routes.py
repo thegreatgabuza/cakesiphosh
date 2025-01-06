@@ -12,10 +12,13 @@ from flask_login import login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import base64
 from firebase_admin import firestore
-from openai import OpenAI
+import openai
 from firebase_admin import auth
 import random
 import pytz
+
+# Configure OpenAI
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'}
@@ -1230,7 +1233,7 @@ def admin_delete_proof(order_id):
         return jsonify({'success': False, 'error': str(e)})
 
 # Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = openai.OpenAI()
 
 SYSTEM_PROMPT = """You are a helpful assistant for Sweet Bakery, a cake shop. 
 You help customers with inquiries about our products, services, and policies.
@@ -1783,96 +1786,21 @@ def refresh_insights():
 
 def generate_ai_insights(orders, products):
     try:
-        # Prepare data for analysis
-        total_orders = len(orders)
-        total_revenue = sum(order.get('total', 0) for order in orders)
+        prompt = f"Based on the following order data, provide insights about sales trends and customer preferences..."
         
-        # Get recent trends
-        thirty_days_ago = datetime.now() - timedelta(days=30)
-        recent_orders = []
-        
-        for order in orders:
-            created_at = order.get('created_at')
-            # Convert string dates to datetime
-            if isinstance(created_at, str):
-                try:
-                    created_at = datetime.fromisoformat(created_at)
-                except ValueError:
-                    continue
-            if created_at and created_at >= thirty_days_ago:
-                order['created_at'] = created_at
-                recent_orders.append(order)
-        
-        # Analyze product performance
-        product_performance = {}
-        for order in recent_orders:
-            items = order.get('items', [])
-            if isinstance(items, list):
-                for item in items:
-                    if isinstance(item, dict):
-                        product_id = item.get('product_id')
-                        if product_id:
-                            product_performance[product_id] = product_performance.get(product_id, 0) + 1
-        
-        # Get top and bottom performing products
-        sorted_products = sorted(product_performance.items(), key=lambda x: x[1], reverse=True)
-        top_products = sorted_products[:3] if sorted_products else []
-        bottom_products = sorted_products[-3:] if len(sorted_products) >= 3 else []
-        
-        # Get product names
-        product_names = {str(p.get('id')): p.get('name', 'Unknown') for p in products}
-        
-        # Format product performance strings
-        top_products_str = ', '.join(
-            f"{product_names.get(str(pid), 'Unknown')} ({count} orders)" 
-            for pid, count in top_products
-        ) or "No data available"
-        
-        bottom_products_str = ', '.join(
-            f"{product_names.get(str(pid), 'Unknown')} ({count} orders)" 
-            for pid, count in bottom_products
-        ) or "No data available"
-        
-        # Prepare prompt for OpenAI
-        prompt = f"""
-        Based on the following bakery data, provide 3-4 key business insights and recommendations:
-        
-        Recent Performance:
-        - Total orders in last 30 days: {len(recent_orders)}
-        - Average order value: R{total_revenue/max(total_orders, 1):.2f}
-        
-        Top Performing Products:
-        {top_products_str}
-        
-        Areas for Improvement:
-        {bottom_products_str}
-        
-        Provide actionable insights focusing on:
-        1. Sales trends and opportunities
-        2. Inventory optimization
-        3. Customer behavior patterns
-        4. Specific recommendations for improvement
-        
-        Format the response in HTML with bullet points.
-        """
-        
-        # Get insights from OpenAI
-        client = OpenAI()
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a business analytics expert specializing in bakery operations."},
+                {"role": "system", "content": "You are a data analyst for a cake shop."},
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            temperature=0.7,
+            max_tokens=500
         )
         
-        insights = response.choices[0].message.content
-        
-        return insights
-        
+        return response.choices[0].message.content
     except Exception as e:
-        print(f"Error generating AI insights: {e}")
-        return "<p class='text-danger'>Error generating insights. Please try again later.</p>"
+        return f"Error generating insights: {str(e)}"
 
 def check_order_feasibility(product_name, quantity):
     """Check if an order is feasible based on ingredients and capacity"""
@@ -1971,7 +1899,7 @@ def ai_assistant():
         message = request.json.get('message', '')
         
         # Use OpenAI to understand the request
-        client = OpenAI()
+        client = openai.OpenAI()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -2239,3 +2167,23 @@ def check_upcoming_birthdays():
                 doc.reference.update({'email_sent': False})
             except Exception as e:
                 print(f"Error resetting email flag for {birthday_data['email']}: {str(e)}")
+
+@app.route('/chat', methods=['POST'])
+def chat_with_ai():
+    try:
+        user_message = request.json.get('message', '')
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7,
+            max_tokens=150
+        )
+        
+        ai_response = response.choices[0].message['content']
+        return jsonify({"response": ai_response})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
