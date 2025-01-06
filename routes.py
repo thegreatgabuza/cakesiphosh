@@ -1232,9 +1232,6 @@ def admin_delete_proof(order_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-# Initialize OpenAI client
-client = openai.OpenAI()
-
 SYSTEM_PROMPT = """You are a helpful assistant for Sweet Bakery, a cake shop. 
 You help customers with inquiries about our products, services, and policies.
 Our specialties include custom cakes, cupcakes, and pastries.
@@ -1260,19 +1257,7 @@ def chat():
         
         # Prepare messages for OpenAI
         messages = [
-            {"role": "system", "content": """You are a helpful assistant for Sweet Bakery, a cake shop. 
-            You help customers with inquiries about our products, services, and policies.
-            Our specialties include:
-            - Custom cakes (birthday, wedding, special occasions)
-            - Prices range from 300-3000 PHP depending on size and design
-            - We require 3-5 days advance notice for custom orders
-            - We offer delivery within the city
-            - Payment methods: Bank transfer or cash
-            - Operating hours: 9 AM - 6 PM, Monday to Saturday
-            
-            Be friendly, professional, and always aim to provide accurate information.
-            If you're not sure about specific details, encourage the customer to contact us directly.
-            """}
+            {"role": "system", "content": SYSTEM_PROMPT}
         ]
         
         # Add chat history
@@ -1285,8 +1270,8 @@ def chat():
         
         print("Sending request to OpenAI...")  # Debug log
         
-        # Get response from OpenAI using new API
-        response = client.chat.completions.create(
+        # Get response from OpenAI using older API
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=messages,
             max_tokens=500,
@@ -1296,7 +1281,7 @@ def chat():
         
         print("Received response from OpenAI")  # Debug log
         
-        bot_response = response.choices[0].message.content
+        bot_response = response.choices[0].message['content']
         
         # Update chat history
         chat_history.append({
