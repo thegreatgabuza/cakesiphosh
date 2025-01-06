@@ -1,0 +1,385 @@
+<!-- Chat Widget -->
+<div id="chat-widget" class="chat-widget">
+    <!-- Chat Toggle Button -->
+    <button id="chat-toggle" class="chat-toggle">
+        <i class="bi bi-chat-dots-fill"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="chat-window" class="chat-window" style="display: none;">
+        <div class="chat-header">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-robot me-2"></i>
+                <h5 class="mb-0">Cake Siphosh Assistant</h5>
+            </div>
+            <div class="chat-actions">
+                <button id="chat-minimize" class="chat-control" title="Minimize">
+                    <i class="bi bi-dash-lg"></i>
+                </button>
+                <button id="chat-cancel" class="chat-control" title="End Chat">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            </div>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="message bot">
+                <i class="bi bi-robot me-2"></i>
+                Hello! 👋 Welcome to Cake Siphosh! How can I assist you today?
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chat-input-field" placeholder="Type your message...">
+            <button id="chat-send">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    font-family: 'Arial', sans-serif;
+}
+
+.chat-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #ff69b4;
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+}
+
+.chat-toggle:hover {
+    transform: scale(1.1);
+    background-color: #ff4da6;
+}
+
+.chat-window {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-header {
+    padding: 15px;
+    background: linear-gradient(135deg, #ff69b4, #ff4da6);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header h5 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.chat-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-control {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 1.2em;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.chat-control:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+#chat-cancel:hover {
+    color: #ffd4e5;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8f9fa;
+}
+
+.message {
+    max-width: 80%;
+    padding: 12px 15px;
+    border-radius: 15px;
+    margin: 5px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.message.bot {
+    background: white;
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+    color: #333;
+}
+
+.message.user {
+    background: #ff69b4;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+}
+
+.chat-input {
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+.chat-input input {
+    flex-grow: 1;
+    padding: 12px 20px;
+    border: 2px solid #eee;
+    border-radius: 25px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.chat-input input:focus {
+    border-color: #ff69b4;
+}
+
+.chat-input button {
+    background: #ff69b4;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+}
+
+.chat-input button:hover {
+    transform: scale(1.1);
+    background-color: #ff4da6;
+}
+
+/* Animation classes */
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+.slide-out {
+    animation: slideOut 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
+
+.message.error {
+    background: #fff2f2;
+    color: #dc3545;
+    border-left: 4px solid #dc3545;
+}
+
+.message.error .error-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message.error .error-message i {
+    font-size: 1.2em;
+    color: #dc3545;
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 15px;
+    width: fit-content;
+    margin: 5px 0;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: #ff69b4;
+    border-radius: 50%;
+    animation: typing 1s infinite ease-in-out;
+    opacity: 0.6;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(2) { animation-delay: 0.3s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatWindow = document.getElementById('chat-window');
+    const chatCancel = document.getElementById('chat-cancel');
+    const chatMinimize = document.getElementById('chat-minimize');
+    const chatInput = document.getElementById('chat-input-field');
+    const chatSend = document.getElementById('chat-send');
+    const chatMessages = document.getElementById('chat-messages');
+    let chatSession = null;
+
+    // Toggle chat window
+    chatToggle.addEventListener('click', () => {
+        chatWindow.style.display = 'flex';
+        chatWindow.classList.add('slide-in');
+        chatInput.focus();
+        
+        // Start new chat session if none exists
+        if (!chatSession) {
+            startNewChat();
+        }
+    });
+
+    // Minimize chat window
+    chatMinimize.addEventListener('click', () => {
+        chatWindow.classList.add('slide-out');
+        setTimeout(() => {
+            chatWindow.style.display = 'none';
+            chatWindow.classList.remove('slide-out');
+        }, 300);
+    });
+
+    // Cancel/End chat session
+    chatCancel.addEventListener('click', () => {
+        if (confirm('Are you sure you want to end this chat session? This will clear the current conversation.')) {
+            endChatSession();
+        }
+    });
+
+    function startNewChat() {
+        chatSession = Date.now();
+        chatMessages.innerHTML = `
+            <div class="message bot">
+                <i class="bi bi-robot me-2"></i>
+                Hello! 👋 Welcome to Cake Siphosh! How can I assist you today?
+            </div>
+        `;
+    }
+
+    function endChatSession() {
+        chatSession = null;
+        chatWindow.classList.add('slide-out');
+        setTimeout(() => {
+            chatWindow.style.display = 'none';
+            chatWindow.classList.remove('slide-out');
+            chatMessages.innerHTML = '';
+            chatInput.value = '';
+            startNewChat();
+        }, 300);
+    }
+
+    // Send message function
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        const userMessageDiv = document.createElement('div');
+        userMessageDiv.className = 'message user';
+        userMessageDiv.textContent = message;
+        chatMessages.appendChild(userMessageDiv);
+
+        // Clear input
+        chatInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Show typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.innerHTML = '<span></span><span></span><span></span>';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Simulate bot response (replace with actual API call)
+        setTimeout(() => {
+            typingDiv.remove();
+            const botMessageDiv = document.createElement('div');
+            botMessageDiv.className = 'message bot';
+            botMessageDiv.innerHTML = `
+                <i class="bi bi-robot me-2"></i>
+                I'm processing your request about "${message}". How else can I assist you?
+            `;
+            chatMessages.appendChild(botMessageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1500);
+    }
+
+    // Send message on button click
+    chatSend.addEventListener('click', sendMessage);
+
+    // Send message on Enter key
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+});
+</script> 

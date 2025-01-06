@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Coming Soon! 🎉</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .message {
+            font-size: 18px;
+            color: #333333;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .highlight {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #ff6b6b;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .offer {
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #2e7d32;
+            text-align: center;
+            font-size: 18px;
+        }
+        .footer {
+            text-align: center;
+            color: #666666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-links a {
+            margin: 0 10px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='images/germanchoc.jpeg') }}" 
+                 alt="German Chocolate Cake"
+                 style="max-width: 200px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <h1>🎉 Happy Birthday Coming Soon! 🎂</h1>
+        </div>
+        
+        <div class="content">
+            <div class="message">
+                {{ custom_message|safe }}
+            </div>
+            
+            {% if custom_offer %}
+            <div class="offer">
+                🎁 Special Birthday Offer:<br>
+                <strong>{{ custom_offer }}</strong>
+            </div>
+            {% endif %}
+            
+            <div style="text-align: center;">
+                <a href="https://cakesiphosh.com/special-offers" class="cta-button">
+                    Check Out Our Birthday Specials
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="#"><img src="https://img.icons8.com/color/24/000000/facebook-new.png" alt="Facebook"></a>
+                <a href="#"><img src="https://img.icons8.com/color/24/000000/instagram-new.png" alt="Instagram"></a>
+                <a href="#"><img src="https://img.icons8.com/color/24/000000/twitter.png" alt="Twitter"></a>
+            </div>
+            <p>Cake Siphosh - Making Your Special Days Sweeter</p>
+            <p style="font-size: 12px; color: #999999;">
+                This email was sent by Cake Siphosh.<br>
+                If you have any questions, please contact us at support@cakesiphosh.com
+            </p>
+        </div>
+    </div>
+</body>
+</html> 

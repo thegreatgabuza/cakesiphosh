@@ -1,0 +1,99 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Chat Interactions - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">
+        <i class="bi bi-chat-dots me-2"></i>
+        Chat Interactions
+    </h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Message</th>
+                            <th>Response</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interaction in interactions %}
+                        <tr>
+                            <td>{{ interaction.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if interaction.user_id == 'anonymous' %}
+                                <span class="badge bg-secondary">Anonymous</span>
+                                {% else %}
+                                <span class="badge bg-primary">{{ interaction.user_id }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ interaction.message }}</td>
+                            <td>{{ interaction.response }}</td>
+                            <td>
+                                {% if interaction.is_resolved %}
+                                <span class="badge bg-success">Resolved</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not interaction.is_resolved %}
+                                <button class="btn btn-sm btn-success resolve-btn" 
+                                        data-interaction-id="{{ interaction.id }}">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Mark Resolved
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const resolveButtons = document.querySelectorAll('.resolve-btn');
+    
+    resolveButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const interactionId = this.dataset.interactionId;
+            
+            try {
+                const response = await fetch(`/admin/resolve-chat/${interactionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update UI
+                    const row = this.closest('tr');
+                    row.querySelector('td:nth-child(5)').innerHTML = '<span class="badge bg-success">Resolved</span>';
+                    this.remove();
+                } else {
+                    alert('Failed to mark as resolved. Please try again.');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

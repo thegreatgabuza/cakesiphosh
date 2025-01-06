@@ -1,0 +1,428 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Order Management</h2>
+        <div class="d-flex gap-2">
+            <select class="form-select" id="orderStatusFilter">
+                <option value="all">All Orders</option>
+                <option value="pending">Pending</option>
+                <option value="payment_verified">Payment Verified</option>
+                <option value="preparing">Preparing</option>
+                <option value="ready">Ready for Pickup</option>
+                <option value="completed">Completed</option>
+                <option value="declined">Declined</option>
+            </select>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-download"></i> Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="exportOrders('csv')">Export to CSV</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="exportOrders('pdf')">Export to PDF</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Payment Status</th>
+                            <th>Order Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>
+                                {% if order.delivery_details %}
+                                    {{ order.delivery_details.customer_name }}
+                                {% else %}
+                                    {{ order.customer_id }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        onclick="viewItems('{{ order.id }}')">
+                                    View Items
+                                </button>
+                            </td>
+                            <td>R{{ "%.2f"|format(order.total) }}</td>
+                            <td>
+                                <span class="badge bg-{{ order.payment_status_color }}">
+                                    {{ order.payment_status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ order.status_color }}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ order.created_at }}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary" 
+                                            onclick="manageOrder('{{ order.id }}')"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#orderModal{{ order.id }}">
+                                        Manage
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" 
+                                            onclick="deleteOrder('{{ order.id }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Management Modal -->
+{% for order in orders %}
+<div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Order #{{ order.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Order Details -->
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Order Details</h6>
+                        <div class="mb-3">
+                            {% if order.delivery_details %}
+                                <strong>Customer Name:</strong> {{ order.delivery_details.customer_name }}<br>
+                                <strong>Contact:</strong> {{ order.delivery_details.contact_number }}<br>
+                                <strong>Delivery Address:</strong> {{ order.delivery_details.delivery_address }}<br>
+                            {% endif %}
+                            <strong>Order Date:</strong> 
+                            {{ order.created_at }}<br>
+                            <strong>Total Amount:</strong> R{{ "%.2f"|format(order.total) }}
+                        </div>
+
+                        <h6 class="mb-3">Order Items</h6>
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.order_items %}
+                                    <tr>
+                                        <td>{{ item.name|default('Unknown Product') }}</td>
+                                        <td>{{ item.quantity|default(1) }}</td>
+                                        <td>R{{ "%.2f"|format(item.price|default(0)) }}</td>
+                                        <td>R{{ "%.2f"|format(item.price|default(0) * item.quantity|default(1)) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3">Total:</th>
+                                        <th>R{{ "%.2f"|format(order.total) }}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Payment and Status Management -->
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Payment Verification</h6>
+                        {% if order.proof_of_payment_url %}
+                        <div class="mb-3">
+                            <img src="{{ order.proof_of_payment_url }}" 
+                                 class="img-fluid mb-2 border rounded" 
+                                 alt="Proof of Payment">
+                            
+                            {% if order.payment_status == 'submitted' %}
+                            <div class="d-flex gap-2 mt-2">
+                                <button class="btn btn-success" 
+                                        onclick="verifyPayment('{{ order.id }}', true)">
+                                    Verify Payment
+                                </button>
+                                <button class="btn btn-danger" 
+                                        onclick="verifyPayment('{{ order.id }}', false)">
+                                    Decline Payment
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No proof of payment uploaded yet.</p>
+                        {% endif %}
+
+                        <h6 class="mb-3">Update Status</h6>
+                        <form onsubmit="updateOrderStatus(event, '{{ order.id }}')">
+                            <div class="mb-3">
+                                <select class="form-select" name="status" required>
+                                    <option value="pending" 
+                                            {% if order.status == 'pending' %}selected{% endif %}>
+                                        Pending
+                                    </option>
+                                    <option value="payment_verified" 
+                                            {% if order.status == 'payment_verified' %}selected{% endif %}>
+                                        Payment Verified
+                                    </option>
+                                    <option value="preparing" 
+                                            {% if order.status == 'preparing' %}selected{% endif %}>
+                                        Preparing
+                                    </option>
+                                    <option value="ready" 
+                                            {% if order.status == 'ready' %}selected{% endif %}>
+                                        Ready for Pickup
+                                    </option>
+                                    <option value="completed" 
+                                            {% if order.status == 'completed' %}selected{% endif %}>
+                                        Completed
+                                    </option>
+                                    <option value="declined" 
+                                            {% if order.status == 'declined' %}selected{% endif %}>
+                                        Declined
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Admin Comment</label>
+                                <textarea class="form-control" name="comment" rows="3" 
+                                          placeholder="Add a comment (optional)">{{ order.admin_comment }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Items Modal -->
+<div class="modal fade" id="itemsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Items</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="itemsModalBody">
+                <!-- Items will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Filter orders
+document.getElementById('orderStatusFilter').addEventListener('change', function() {
+    window.location.href = `/admin/orders?status=${this.value}`;
+});
+
+// View order items
+function viewItems(orderId) {
+    const orders = JSON.parse('{{ orders|tojson|safe }}');
+    const order = orders.find(o => o.id === orderId);
+    if (!order || !order.order_items) return;
+    
+    const itemsHtml = `
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${order.order_items.map(item => `
+                    <tr>
+                        <td>${item.name || 'Unknown Product'}</td>
+                        <td>${item.quantity || 1}</td>
+                        <td>R${(item.price || 0).toFixed(2)}</td>
+                        <td>R${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3">Total:</th>
+                    <th>R${order.total.toFixed(2)}</th>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+    
+    document.getElementById('itemsModalBody').innerHTML = itemsHtml;
+    new bootstrap.Modal(document.getElementById('itemsModal')).show();
+}
+
+// Verify payment
+function verifyPayment(orderId, isVerified) {
+    if (!confirm(`Are you sure you want to ${isVerified ? 'verify' : 'decline'} this payment?`)) return;
+    
+    fetch(`/admin/orders/${orderId}/verify-payment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ verified: isVerified })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error updating payment status');
+        }
+    });
+}
+
+// Update order status
+function updateOrderStatus(event, orderId) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch(`/admin/orders/${orderId}/update-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            status: formData.get('status'),
+            comment: formData.get('comment')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error updating order status');
+        }
+    });
+}
+
+// Delete order
+function deleteOrder(orderId) {
+    if (!confirm('Are you sure you want to delete this order? This cannot be undone.')) return;
+    
+    fetch(`/admin/orders/${orderId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error deleting order');
+        }
+    });
+}
+
+// Export orders
+function exportOrders(format = 'csv') {
+    const orders = JSON.parse('{{ orders|tojson|safe }}');
+    
+    if (format === 'csv') {
+        const csv = [
+            ['Order ID', 'Customer', 'Total', 'Payment Status', 'Order Status', 'Created At'],
+            ...orders.map(order => [
+                order.id,
+                (order.delivery_details ? order.delivery_details.customer_name : order.customer_id),
+                order.total,
+                order.payment_status,
+                order.status,
+                order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A'
+            ])
+        ]
+        .map(row => row.join(','))
+        .join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'orders.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } else if (format === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Add title
+        doc.setFontSize(16);
+        doc.text('Orders Report', 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+        
+        // Prepare data for table
+        const tableData = orders.map(order => [
+            order.id,
+            order.delivery_details ? order.delivery_details.customer_name : order.customer_id,
+            `R${order.total.toFixed(2)}`,
+            order.payment_status,
+            order.status,
+            order.created_at
+        ]);
+        
+        // Add table
+        doc.autoTable({
+            head: [['Order ID', 'Customer', 'Total', 'Payment Status', 'Order Status', 'Created At']],
+            body: tableData,
+            startY: 25,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [51, 51, 51] },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            margin: { top: 25 }
+        });
+        
+        // Add summary
+        const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
+        const pendingOrders = orders.filter(order => order.status === 'pending').length;
+        const completedOrders = orders.filter(order => order.status === 'completed').length;
+        
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(10);
+        doc.text(`Total Orders: ${orders.length}`, 14, finalY);
+        doc.text(`Total Amount: R${totalAmount.toFixed(2)}`, 14, finalY + 7);
+        doc.text(`Pending Orders: ${pendingOrders}`, 14, finalY + 14);
+        doc.text(`Completed Orders: ${completedOrders}`, 14, finalY + 21);
+        
+        // Save PDF
+        doc.save('orders-report.pdf');
+    }
+}
+</script>
+{% endblock %} 

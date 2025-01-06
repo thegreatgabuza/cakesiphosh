@@ -1,0 +1,26 @@
+bakery_app/
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── main.js
+│   └── uploads/
+├── templates/
+│   ├── admin/
+│   │   ├── dashboard.html
+│   │   ├── orders.html
+│   │   └── settings.html
+│   ├── customer/
+│   │   ├── dashboard.html
+│   │   └── orders.html
+│   ├── base.html
+│   ├── home.html
+│   └── login.html
+├── config.py
+├── models.py
+├── routes.py
+├── app.py
+├── .firebaserc
+├── firebase.json
+├── .gitignore
+└── requirements.txt 

@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Order Proof of Payments</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>File Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.order_id }}</td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ order.proof_of_payment.file_name }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="viewFile('{{ order.proof_of_payment.data }}', '{{ order.proof_of_payment.file_type }}')">
+                            View File
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- File Preview Modal -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">File Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="filePreviewContent">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewFile(base64Data, fileType) {
+    const modal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
+    const contentDiv = document.getElementById('filePreviewContent');
+    
+    if (fileType.startsWith('image/')) {
+        contentDiv.innerHTML = `<img src="${base64Data}" class="img-fluid">`;
+    } else if (fileType === 'application/pdf') {
+        contentDiv.innerHTML = `<embed src="${base64Data}" type="application/pdf" width="100%" height="600px">`;
+    } else {
+        // For DOC/DOCX, provide a download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = base64Data;
+        downloadLink.download = 'document';
+        downloadLink.className = 'btn btn-primary';
+        downloadLink.innerHTML = 'Download Document';
+        contentDiv.innerHTML = '';
+        contentDiv.appendChild(downloadLink);
+    }
+    
+    modal.show();
+}
+</script>
+{% endblock %} 

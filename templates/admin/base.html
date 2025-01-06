@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-dark text-light p-4 min-vh-100">
+            <h5 class="mb-4">Admin Panel</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" 
+                       href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_products' %}active{% endif %}" 
+                       href="{{ url_for('admin_products') }}">
+                        <i class="bi bi-box me-2"></i>Products
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_ingredients' %}active{% endif %}" 
+                       href="{{ url_for('admin_ingredients') }}">
+                        <i class="bi bi-list-check me-2"></i>Ingredients
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_orders' %}active{% endif %}" 
+                       href="{{ url_for('admin_orders') }}">
+                        <i class="bi bi-cart me-2"></i>Orders
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_view_proof_of_payments' %}active{% endif %}" 
+                       href="{{ url_for('admin_view_proof_of_payments') }}">
+                        <i class="bi bi-file-earmark-check me-2"></i>Payment Proofs
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_settings' %}active{% endif %}" 
+                       href="{{ url_for('admin_settings') }}">
+                        <i class="bi bi-gear me-2"></i>Settings
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_users' %}active{% endif %}" 
+                       href="{{ url_for('admin_users') }}">
+                        <i class="bi bi-people me-2"></i>Users
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_analytics' %}active{% endif %}" 
+                       href="{{ url_for('admin_analytics') }}">
+                        <i class="bi bi-graph-up me-2"></i>Analytics
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-light {% if request.endpoint == 'admin_birthdays' %}active{% endif %}" 
+                       href="{{ url_for('admin_birthdays') }}">
+                        <i class="bi bi-cake2 me-2"></i>🎂 Birthdays 
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.nav-link.active {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 4px;
+}
+.nav-link:hover {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,707 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="analyticsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="true">
+                <i class="bi bi-calendar-check me-2"></i>Daily Stats
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab" aria-controls="products" aria-selected="false">
+                <i class="bi bi-box-seam me-2"></i>Products
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers" type="button" role="tab" aria-controls="customers" aria-selected="false">
+                <i class="bi bi-people me-2"></i>Customers
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ai-assistant-tab" data-bs-toggle="tab" data-bs-target="#ai-assistant" type="button" role="tab" aria-controls="ai-assistant" aria-selected="false">
+                <i class="bi bi-robot me-2"></i>AI Assistant
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="analyticsTabContent">
+        <!-- Daily Stats Tab -->
+        <div class="tab-pane fade show active" id="daily" role="tabpanel" aria-labelledby="daily-tab">
+            <!-- AI Insights -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">AI-Powered Insights</h6>
+                            <button class="btn btn-sm btn-primary" onclick="refreshInsights()" id="refreshInsightsBtn">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="aiInsights" class="mb-4">
+                                {{ ai_insights|safe }}
+                            </div>
+                            <!-- Loading Spinner -->
+                            <div id="insightsLoader" class="text-center d-none">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Generating new insights...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Forecast -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Sales Forecast (Next 7 Days)</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Predicted Revenue</th>
+                                            <th>Trend</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for date, value in forecast_dates|zip(forecast_values) %}
+                                        {% set trend = '+' if loop.index0 > 0 and value > forecast_values[loop.index0-1] else '-' %}
+                                        <tr>
+                                            <td>{{ date }}</td>
+                                            <td>R{{ "%.2f"|format(value) }}</td>
+                                            <td>
+                                                <span class="text-{{ 'success' if trend == '+' else 'danger' }}">
+                                                    <i class="bi bi-arrow-{{ 'up' if trend == '+' else 'down' }}"></i>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div class="tab-pane fade" id="products" role="tabpanel" aria-labelledby="products-tab">
+            <!-- Product Performance -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Product Performance & Stock Predictions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Current Stock</th>
+                                            <th>Predicted Demand (7 Days)</th>
+                                            <th>Recommended Stock</th>
+                                            <th>Trend</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in products %}
+                                        <tr>
+                                            <td>{{ product.name }}</td>
+                                            <td>{{ product.stock }}</td>
+                                            <td>{{ product.predicted_demand }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if product.stock >= product.recommended_stock else 'warning' }}">
+                                                    {{ product.recommended_stock }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="text-{{ product.trend_color }}">
+                                                    <i class="bi bi-{{ product.trend_icon }}"></i>
+                                                    {{ product.trend_percentage }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Sales Trends Graph -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Product Sales Trends (Last 30 Days)</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="productSalesTrends" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customers Tab -->
+        <div class="tab-pane fade" id="customers" role="tabpanel" aria-labelledby="customers-tab">
+            <!-- Location Filter -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Filter by Location</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <select class="form-select" id="provinceFilter">
+                                        <option value="all">All Provinces</option>
+                                        <option value="gauteng">Gauteng</option>
+                                        <option value="western-cape">Western Cape</option>
+                                        <option value="kwazulu-natal">KwaZulu-Natal</option>
+                                        <option value="eastern-cape">Eastern Cape</option>
+                                        <option value="free-state">Free State</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" id="cityFilter">
+                                        <option value="all">All Cities</option>
+                                        <option value="johannesburg">Johannesburg</option>
+                                        <option value="pretoria">Pretoria</option>
+                                        <option value="cape-town">Cape Town</option>
+                                        <option value="durban">Durban</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-primary w-100" onclick="updateLocationStats()">
+                                        <i class="bi bi-funnel-fill me-2"></i>Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Order Time Distribution -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Order Time Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Orders</th>
+                                            <th>Activity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for label, value in peak_times_labels|zip(peak_times_values) %}
+                                        {% set max_value = peak_times_values|max %}
+                                        {% set percentage = (value / max_value * 100)|round %}
+                                        <tr>
+                                            <td>{{ label }}</td>
+                                            <td>{{ value }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if percentage >= 70 else 'warning' if percentage >= 30 else 'danger' }}">
+                                                    {{ percentage }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demographics Revenue Impact -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Demographics Revenue Impact</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Age Group</th>
+                                            <th>Revenue</th>
+                                            <th>Share</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for label, value in demographics_labels|zip(demographics_values) %}
+                                        {% set total = demographics_values|sum %}
+                                        {% set percentage = (value / total * 100)|round %}
+                                        <tr>
+                                            <td>{{ label }}</td>
+                                            <td>R{{ "%.2f"|format(value) }}</td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ percentage }}%</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Customer Location Insights Graph -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Customer Location Insights</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="customerLocationChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Assistant Tab -->
+        <div class="tab-pane fade" id="ai-assistant" role="tabpanel" aria-labelledby="ai-assistant-tab">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Order Feasibility Assistant</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Chat Messages Area -->
+                            <div id="chat-messages" class="mb-4" style="height: 400px; overflow-y: auto;">
+                                <div class="text-center text-muted mb-4">
+                                    <p>👋 Hello! I can help you check if you have enough ingredients and capacity for specific orders.</p>
+                                    <p>Try asking something like:</p>
+                                    <ul class="list-unstyled">
+                                        <li>"Can we make 50 chocolate cakes tomorrow?"</li>
+                                        <li>"Do we have ingredients for 30 vanilla cupcakes?"</li>
+                                        <li>"What's our maximum capacity for red velvet cake today?"</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Chat Input Area -->
+                            <div class="chat-input-area">
+                                <form id="chat-form" class="d-flex gap-2">
+                                    <input type="text" id="chat-input" class="form-control" 
+                                           placeholder="Ask about order feasibility..." required>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function refreshInsights() {
+    // Show loader and disable refresh button
+    const loader = document.getElementById('insightsLoader');
+    const insights = document.getElementById('aiInsights');
+    const refreshBtn = document.getElementById('refreshInsightsBtn');
+    
+    loader.classList.remove('d-none');
+    insights.classList.add('d-none');
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Refreshing...';
+
+    fetch('/admin/refresh-insights')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.insights) {
+                insights.innerHTML = data.insights;
+            }
+        })
+        .catch(function(error) {
+            console.error('Error refreshing insights:', error);
+            insights.innerHTML = '<p class="text-danger">Error refreshing insights. Please try again.</p>';
+        })
+        .finally(function() {
+            // Hide loader and restore refresh button
+            loader.classList.add('d-none');
+            insights.classList.remove('d-none');
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Refresh';
+        });
+}
+
+// Preserve active tab after page refresh
+document.addEventListener('DOMContentLoaded', function() {
+    // Get active tab from localStorage
+    const activeTab = localStorage.getItem('activeAnalyticsTab');
+    if (activeTab) {
+        const tab = new bootstrap.Tab(document.querySelector(activeTab));
+        tab.show();
+    }
+
+    // Store active tab in localStorage when changed
+    const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabElements.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+            localStorage.setItem('activeAnalyticsTab', '#' + event.target.id);
+        });
+    });
+});
+
+// AI Assistant Chat Functionality
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Add user message to chat
+    addMessageToChat('user', message);
+    input.value = '';
+
+    // Send message to backend
+    fetch('/admin/ai-assistant', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addMessageToChat('assistant', data.response);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        addMessageToChat('assistant', 'Sorry, I encountered an error. Please try again.');
+    });
+});
+
+function addMessageToChat(role, content) {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role} mb-3`;
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = `message-content p-3 rounded ${role === 'user' ? 'bg-light text-dark' : 'bg-primary text-white'} ${role === 'user' ? 'ms-auto' : 'me-auto'}`;
+    messageContent.style.maxWidth = '80%';
+    messageContent.textContent = content;
+    
+    messageDiv.appendChild(messageContent);
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Generate dates for the last 30 days
+    const dates = Array.from({length: 30}, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (29 - i));
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    // Generate fake data with more realistic patterns
+    const generateFakeData = () => {
+        const baseValue = Math.floor(Math.random() * 30) + 20;
+        return Array.from({length: 30}, () => {
+            return baseValue + Math.floor(Math.random() * 15) - 5;
+        });
+    };
+
+    const salesData = {
+        labels: dates,
+        datasets: [
+            {
+                label: 'German Chocolate Cake',
+                data: generateFakeData(),
+                borderColor: '#FF6B6B',
+                backgroundColor: '#FF6B6B33',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Red Velvet Cake',
+                data: generateFakeData(),
+                borderColor: '#4ECDC4',
+                backgroundColor: '#4ECDC433',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Vanilla Cupcakes',
+                data: generateFakeData(),
+                borderColor: '#45B7D1',
+                backgroundColor: '#45B7D133',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Chocolate Brownies',
+                data: generateFakeData(),
+                borderColor: '#96CEB4',
+                backgroundColor: '#96CEB433',
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    };
+
+    // Create animated sales trends chart
+    const ctx = document.getElementById('productSalesTrends').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: salesData,
+        options: {
+            responsive: true,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Daily Sales by Product',
+                    padding: {
+                        top: 10,
+                        bottom: 30
+                    },
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Units Sold',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: '#e0e0e0'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                point: {
+                    radius: 0,
+                    hoverRadius: 6
+                },
+                line: {
+                    borderWidth: 2
+                }
+            }
+        }
+    });
+
+    // Update data every 5 seconds to create animation
+    setInterval(() => {
+        chart.data.datasets.forEach((dataset) => {
+            dataset.data = generateFakeData();
+        });
+        chart.update('active');
+    }, 5000);
+});
+
+// Add new location chart initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize location chart
+    const locationCtx = document.getElementById('customerLocationChart').getContext('2d');
+    const locationData = {
+        labels: ['Johannesburg', 'Pretoria', 'Cape Town', 'Durban', 'Port Elizabeth', 'Bloemfontein'],
+        datasets: [
+            {
+                label: 'Orders',
+                data: generateFakeLocationData(),
+                backgroundColor: [
+                    '#FF6B6B',
+                    '#4ECDC4',
+                    '#45B7D1',
+                    '#96CEB4',
+                    '#FFEEAD',
+                    '#D4A5A5'
+                ],
+                borderWidth: 1
+            },
+            {
+                label: 'Revenue (R)',
+                data: generateFakeLocationData(1000),
+                backgroundColor: [
+                    '#FF6B6B33',
+                    '#4ECDC433',
+                    '#45B7D133',
+                    '#96CEB433',
+                    '#FFEEAD33',
+                    '#D4A5A533'
+                ],
+                borderWidth: 1
+            }
+        ]
+    };
+
+    const locationChart = new Chart(locationCtx, {
+        type: 'bar',
+        data: locationData,
+        options: {
+            responsive: true,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Orders and Revenue by Location',
+                    padding: {
+                        top: 10,
+                        bottom: 30
+                    },
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count / Amount (R)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Update location data periodically
+    setInterval(() => {
+        locationChart.data.datasets[0].data = generateFakeLocationData();
+        locationChart.data.datasets[1].data = generateFakeLocationData(1000);
+        locationChart.update('active');
+    }, 5000);
+});
+
+// Function to generate fake location data
+function generateFakeLocationData(multiplier = 1) {
+    return Array.from({length: 6}, () => Math.floor(Math.random() * 50 + 30) * multiplier);
+}
+
+// Function to update location stats based on filters
+function updateLocationStats() {
+    const province = document.getElementById('provinceFilter').value;
+    const city = document.getElementById('cityFilter').value;
+    
+    // Here you would typically make an API call to get filtered data
+    // For now, we'll just regenerate random data
+    const locationChart = Chart.getChart('customerLocationChart');
+    if (locationChart) {
+        locationChart.data.datasets[0].data = generateFakeLocationData();
+        locationChart.data.datasets[1].data = generateFakeLocationData(1000);
+        locationChart.update('active');
+    }
+}
+</script>
+
+<style>
+.chat-message {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.chat-message.user {
+    justify-content: flex-end;
+}
+
+.chat-message.assistant {
+    justify-content: flex-start;
+}
+
+.message-content {
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    max-width: 80%;
+}
+
+.user .message-content {
+    background-color: #f8f9fa;
+    margin-left: auto;
+}
+
+.assistant .message-content {
+    background-color: #0d6efd;
+    color: white;
+    margin-right: auto;
+}
+</style>
+{% endblock %} 

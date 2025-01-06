@@ -1,0 +1,131 @@
+.navbar {
+    margin-bottom: 2rem;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.badge {
+    font-size: 0.9em;
+}
+
+.table-responsive {
+    margin-top: 1rem;
+}
+
+.modal-body img {
+    max-width: 100%;
+    height: auto;
+}
+
+.add-to-cart {
+    transition: all 0.2s;
+}
+
+.add-to-cart:hover {
+    transform: scale(1.05);
+}
+
+#cartTotal {
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Product Cards */
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.product-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Cart */
+.cart-item img {
+    height: 80px;
+    object-fit: cover;
+}
+
+.quantity-input {
+    width: 60px !important;
+    text-align: center;
+}
+
+/* Offcanvas Cart */
+.offcanvas {
+    width: 400px !important;
+}
+
+/* Checkout Modal */
+.modal-lg {
+    max-width: 800px;
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+/* Cart Icon */
+.cart-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    width: 45px;
+    height: 45px;
+}
+
+.cart-icon img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Cart Badge */
+.cart-icon .badge {
+    transform: translate(40%, -40%) !important;
+}
+
+/* Delivery Details */
+#deliveryDetails {
+    border-top: 1px solid #dee2e6;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+#deliveryDetails.show {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+} 
