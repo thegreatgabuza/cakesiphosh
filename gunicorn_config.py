@@ -1,5 +1,8 @@
+import os
+
+bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 workers = 4
-bind = "0.0.0.0:10000"
+threads = 2
 timeout = 120
 worker_class = "sync"
 accesslog = "-"
