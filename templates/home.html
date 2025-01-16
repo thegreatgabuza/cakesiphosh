@@ -1,326 +1,423 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cake Siphosh - Artisan Bakery</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #9370DB;
+            --secondary-color: #FFB6C1;
+            --text-color: #333;
+            --light-bg: #F8F9FA;
+        }
 
-{% block title %}Cake Siphosh - Fresh Daily Baked Goods{% endblock %}
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FFE5F1, #E5E5FF);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
 
-{% block content %}
-<div class="container">
-    <!-- Top Navigation -->
-    <div class="d-flex justify-content-end mb-5">
-            {% if not session.user %}
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('login') }}?tab=register" class="btn btn-outline-primary">
-                <i class="bi bi-person-plus me-2"></i>Register
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            border: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-card {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .product-card .card {
+            height: 100%;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .product-image {
+            height: 250px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .stats-badge {
+            background: var(--light-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin: 0.5rem;
+            display: inline-block;
+        }
+
+        .action-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .action-button:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: -1;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--secondary-color);
+            top: 10%;
+            left: 5%;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: var(--primary-color);
+            bottom: 20%;
+            right: 10%;
+        }
+
+        .hero-section {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .featured-products {
+            padding: 4rem 0;
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        .btn-filter {
+            padding: 8px 20px;
+            border-radius: 25px;
+            background: white;
+            color: #666;
+            border: 2px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .btn-filter:hover, .btn-filter.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+
+        .quick-add-btn {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            z-index: 2;
+            opacity: 0;
+        }
+
+        .product-card:hover .quick-add-btn {
+            bottom: 20px;
+            opacity: 1;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .card-body {
+            padding: 1rem 0;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-text {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .price {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .product-rating {
+            color: #FFD700;
+            font-size: 0.9rem;
+        }
+
+        .toast-container {
+            z-index: 1050;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Shapes -->
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light py-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <h2 class="fw-bold">Cake Siphosh</h2>
             </a>
-            <a href="{{ url_for('login') }}" class="btn btn-primary">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-            </a>
-            </div>
-            {% else %}
-        <a href="{{ url_for('customer_dashboard' if session.user.role != 'admin' else 'admin_dashboard') }}" 
-           class="btn btn-primary">Dashboard</a>
-                {% endif %}
-    </div>
-
-    <!-- Products Section -->
-    <div class="mb-5" id="products">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Featured Products</h2>
-            <div class="filter-buttons d-flex gap-2">
-                <button class="btn btn-filter active" onclick="filterProducts('all')">All</button>
-                <button class="btn btn-filter" onclick="filterProducts('cakes')">Cakes</button>
-                <button class="btn btn-filter" onclick="filterProducts('pastries')">Pastries</button>
-                <button class="btn btn-filter" onclick="filterProducts('breads')">Breads</button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if not session.user %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('login') }}?tab=register" class="nav-link action-button ms-2">
+                            <i class="bi bi-person-plus me-2"></i>Register
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('login') }}" class="nav-link action-button ms-2">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('customer_dashboard' if session.user.role != 'admin' else 'admin_dashboard') }}" 
+                           class="nav-link action-button ms-2">Dashboard</a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
-        
-        <div class="row g-4">
-            {% for product in products %}
-            <div class="col-md-4 product-card" data-category="{{ product.category|default('all') }}">
-                <div class="card h-100 border-0 shadow-hover">
-                    {% if product.image_url %}
-                    <div class="product-image-wrapper">
-                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
-                        {% if not session.user %}
-                        <button class="btn btn-gradient quick-add-btn" onclick="redirectToLogin(event)">
-                            <i class="bi bi-cart-plus"></i> Login to Order
-                        </button>
-                        {% else %}
-                        <button class="btn btn-gradient quick-add-btn" onclick="addToCart('{{ product.id }}', event)">
-                            <i class="bi bi-cart-plus"></i> Add to Cart
-                        </button>
-                        {% endif %}
-    </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">Crafting Sweet Moments, One Cake at a Time</h1>
+                    <p class="lead mb-4">From classic flavors to innovative creations, each cake is a work of art made with the finest ingredients and a sprinkle of passion.</p>
+                    {% if not session.user %}
+                    <a href="{{ url_for('login') }}?tab=register" class="action-button">
+                        <i class="bi bi-person-plus me-2"></i>Register Now
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('customer_dashboard' if session.user.role != 'admin' else 'admin_dashboard') }}" 
+                       class="action-button">Go to Dashboard</a>
                     {% endif %}
-                <div class="card-body">
-                        <div class="category-badge">{{ product.category|default('Bakery')|title }}</div>
-                        <h5 class="card-title">{{ product.name }}</h5>
-                        <p class="card-text text-muted">{{ product.description }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="price">R{{ "%.2f"|format(product.price) }}</span>
-                            <div class="product-rating">
-                                <i class="bi bi-star-fill"></i>
-                                <span class="ms-1">{{ product.rating|default('4.5') }}</span>
+                </div>
+                <div class="col-lg-6">
+                    <img src="/static/images/3Dimages/Cake (HD).png" alt="Featured Cake" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="featured-products">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Featured Products</h2>
+                <div class="filter-buttons d-flex gap-2">
+                    <button class="btn btn-filter active" onclick="filterProducts('all')">All</button>
+                    <button class="btn btn-filter" onclick="filterProducts('cakes')">Cakes</button>
+                    <button class="btn btn-filter" onclick="filterProducts('pastries')">Pastries</button>
+                    <button class="btn btn-filter" onclick="filterProducts('breads')">Breads</button>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-md-4 product-card" data-category="{{ product.category|default('all') }}">
+                    <div class="card">
+                        <div class="position-relative">
+                            {% if product.image_url %}
+                            <img src="{{ product.image_url }}" class="product-image" alt="{{ product.name }}">
+                            {% endif %}
+                            {% if not session.user %}
+                            <button class="btn quick-add-btn" onclick="redirectToLogin(event)">
+                                <i class="bi bi-cart-plus"></i> Login to Order
+                            </button>
+                            {% else %}
+                            <button class="btn quick-add-btn" onclick="addToCart('{{ product.id }}', event)">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <div class="category-badge">{{ product.category|default('Bakery')|title }}</div>
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text text-muted">{{ product.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price">R{{ "%.2f"|format(product.price) }}</span>
+                                <div class="product-rating">
+                                    <i class="bi bi-star-fill"></i>
+                                    <span class="ms-1">{{ product.rating|default('4.5') }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
+    </section>
 
-    <!-- Features Section -->
-    <div class="features-section py-5">
-        <div class="container">
-            <h2 class="text-center mb-5">Why Choose Us</h2>
-            <div class="row g-4">
-                <div class="col-md-3">
-                    <div class="feature-card">
-                        <i class="bi bi-clock-history"></i>
-                        <h4>Fresh Daily</h4>
-                        <p>Baked fresh every morning for the best quality and taste</p>
-                    </div>
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom Scripts -->
+    <script>
+    function redirectToLogin(event) {
+        event.preventDefault();
+        window.location.href = "{{ url_for('login') }}";
+    }
+
+    function filterProducts(category) {
+        const products = document.querySelectorAll('.product-card');
+        const buttons = document.querySelectorAll('.btn-filter');
+        
+        // Update active button
+        buttons.forEach(button => {
+            button.classList.remove('active');
+            if(button.textContent.toLowerCase().includes(category)) {
+                button.classList.add('active');
+            }
+        });
+
+        // Filter products
+        products.forEach(product => {
+            if (category === 'all' || product.dataset.category === category) {
+                product.style.display = 'block';
+            } else {
+                product.style.display = 'none';
+            }
+        });
+    }
+
+    function showToast(title, message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}:</strong> ${message}
                 </div>
-                <div class="col-md-3">
-                    <div class="feature-card">
-                        <i class="bi bi-truck"></i>
-                        <h4>Fast Delivery</h4>
-                        <p>Quick and reliable delivery to your doorstep</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="feature-card">
-                        <i class="bi bi-heart"></i>
-                        <h4>Quality Ingredients</h4>
-                        <p>Only the finest ingredients for the best results</p>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
-        </div>
-                <div class="col-md-3">
-                    <div class="feature-card">
-                        <i class="bi bi-gift"></i>
-                        <h4>Custom Orders</h4>
-                        <p>Personalized cakes and treats for special occasions</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
 
-<!-- Toast Container -->
-<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
-{% endblock %}
+    function addToCart(productId, event) {
+        event.preventDefault();
+        const button = event.target.closest('button');
+        button.disabled = true;
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
 
-{% block styles %}
-{{ super() }}
-<style>
-/* Colorful Theme */
-:root {
-    --primary-gradient: linear-gradient(45deg, #FF6B6B, #FF8E53);
-    --secondary-gradient: linear-gradient(45deg, #4E65FF, #92EFFD);
-    --accent-gradient: linear-gradient(45deg, #6B4EFF, #B892FD);
-}
+        fetch(`/cart/add/${productId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Item added to cart', 'success');
+            } else {
+                showToast('Error', data.error || 'Error adding to cart', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', 'Error adding to cart', 'error');
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+    }
+    </script>
 
-/* Filter Buttons */
-.btn-filter {
-    padding: 8px 20px;
-    border-radius: 25px;
-    background: white;
-    color: #666;
-    border: 2px solid #eee;
-    transition: all 0.3s ease;
-}
-
-.btn-filter:hover, .btn-filter.active {
-    background: var(--primary-gradient);
-    color: white;
-    border-color: transparent;
-    transform: translateY(-2px);
-}
-
-/* Product Cards */
-.shadow-hover {
-    transition: all 0.3s ease;
-}
-
-.shadow-hover:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-}
-
-.product-image-wrapper {
-    position: relative;
-    overflow: hidden;
-    border-radius: 10px 10px 0 0;
-}
-
-.product-image-wrapper img {
-    transition: transform 0.3s ease;
-}
-
-.product-card:hover .product-image-wrapper img {
-    transform: scale(1.05);
-}
-
-.quick-add-btn {
-    position: absolute;
-    bottom: -50px;
-    left: 50%;
-    transform: translateX(-50%);
-    transition: all 0.3s ease;
-    background: var(--primary-gradient);
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 25px;
-}
-
-.product-card:hover .quick-add-btn {
-    bottom: 20px;
-}
-
-.category-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    background: var(--secondary-gradient);
-    color: white;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    margin-bottom: 10px;
-}
-
-.price {
-    font-size: 1.25rem;
-    font-weight: bold;
-    background: var(--accent-gradient);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.product-rating {
-    color: #FFD700;
-}
-
-/* Feature Cards */
-.feature-card {
-    text-align: center;
-    padding: 30px;
-    border-radius: 15px;
-    background: white;
-    transition: all 0.3s ease;
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-}
-
-.feature-card i {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-    background: var(--primary-gradient);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.features-section {
-    background: #f8f9fa;
-}
-
-/* Toast Styling */
-.toast-container {
-    z-index: 1050;
-}
-
-.btn-gradient {
-    background: var(--primary-gradient);
-    border: none;
-    color: white;
-}
-
-.btn-gradient:hover {
-    opacity: 0.9;
-    color: white;
-}
-</style>
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script>
-function redirectToLogin(event) {
-    event.preventDefault();
-    window.location.href = "{{ url_for('login') }}";
-}
-
-function filterProducts(category) {
-    const products = document.querySelectorAll('.product-card');
-    products.forEach(product => {
-        if (category === 'all' || product.dataset.category === category) {
-            product.style.display = 'block';
-        } else {
-            product.style.display = 'none';
-        }
-    });
-}
-
-function showToast(title, message, type = 'info') {
-    const toastContainer = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <strong>${title}:</strong> ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
-function addToCart(productId, event) {
-    event.preventDefault();
-    const button = event.target.closest('button');
-    button.disabled = true;
-    const originalContent = button.innerHTML;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
-
-    fetch(`/cart/add/${productId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Success', 'Item added to cart', 'success');
-        } else {
-            showToast('Error', data.error || 'Error adding to cart', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error', 'Error adding to cart', 'error');
-    })
-    .finally(() => {
-        button.disabled = false;
-        button.innerHTML = originalContent;
-    });
-}
-</script>
-{% endblock %} 
+    <!-- Chat Widget -->
+    {% if not current_user.is_admin %}
+        {% include 'chat_widget.html' %}
+    {% endif %}
+</body>
+</html> 
