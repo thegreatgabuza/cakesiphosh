@@ -92,8 +92,8 @@
     {% block scripts %}{% endblock %}
     <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
-    <!-- Chat Widget (only for non-admin users) -->
-    {% if current_user.is_authenticated and not current_user.is_admin %}
+    <!-- Chat Widget (for everyone except admins) -->
+    {% if not current_user.is_admin %}
         {% include 'chat_widget.html' %}
     {% endif %}
 </body>

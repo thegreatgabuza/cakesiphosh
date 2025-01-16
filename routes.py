@@ -1319,10 +1319,9 @@ try:
     
     print(f"API Key validation passed. Key starts with: {api_key[:7]}...")
     
+    # Initialize OpenAI client with minimal required parameters
     client = OpenAI(
-        api_key=api_key,
-        timeout=30.0,
-        max_retries=2
+        api_key=api_key
     )
     
     # Test the client with a simple completion
@@ -1351,7 +1350,6 @@ def chat_interface():
     return render_template('chat.html')
 
 @app.route('/chat/send', methods=['POST'])
-@login_required
 def chat_with_ai():
     print("\n=== Starting chat request ===")
     
@@ -1372,8 +1370,8 @@ def chat_with_ai():
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
 
-        # Get user preferences and recent orders for context
-        user_context = get_conversation_context(current_user.id, user_message)
+        # Get user preferences and recent orders for context if user is authenticated
+        user_context = get_conversation_context(current_user.id, user_message) if current_user.is_authenticated else None
         
         # Get recent chat history (last 3 messages)
         chat_history = session.get('chat_history', [])[-3:]
@@ -1422,15 +1420,16 @@ def chat_with_ai():
             chat_history.extend(new_messages)
             session['chat_history'] = chat_history[-10:]  # Keep last 10 messages
             
-            # Store in database
+            # Store in database if user is authenticated
             try:
-                Chat.create({
-                    'user_id': current_user.id,
-                    'user_message': user_message,
-                    'ai_response': ai_message,
-                    'timestamp': datetime.now(),
-                    'resolved': False
-                })
+                if current_user.is_authenticated:
+                    Chat.create({
+                        'user_id': current_user.id,
+                        'user_message': user_message,
+                        'ai_response': ai_message,
+                        'timestamp': datetime.now(),
+                        'resolved': False
+                    })
             except Exception as db_error:
                 print(f"Database error (non-critical): {str(db_error)}")
             
@@ -1466,21 +1465,22 @@ def chat_with_ai():
         }), 500
 
 @app.route('/chat/history', methods=['GET'])
-@login_required
 def get_chat_history():
     try:
-        # Try to get history from database first
-        history = Chat.get_user_history(current_user.id)
-        if not history:
-            # Fall back to session history if no database history
-            history = session.get('chat_history', [])
+        # If user is authenticated, try to get history from database first
+        if current_user.is_authenticated:
+            history = Chat.get_user_history(current_user.id)
+            if history:
+                return jsonify({'history': history})
+        
+        # Fall back to session history for guests or if no database history
+        history = session.get('chat_history', [])
         return jsonify({'history': history})
     except Exception as e:
         print(f"Error getting chat history: {str(e)}")
         return jsonify({'error': 'Failed to get chat history'}), 500
 
 @app.route('/chat/clear', methods=['POST'])
-@login_required
 def clear_chat():
     try:
         session.pop('chat_history', None)

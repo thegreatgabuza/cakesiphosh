@@ -1,5 +1,5 @@
 {% block content %}
-<div class="chat-widget">
+<div class="chat-widget" data-auth="{{ 'true' if current_user.is_authenticated else 'false' }}">
     <!-- Chat Toggle Button -->
     <button id="chat-toggle" class="chat-toggle">
         <i class="bi bi-chat-dots-fill"></i>
@@ -190,6 +190,23 @@
     background-color: #ff4da6;
 }
 
+.chat-login-prompt {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.chat-login-prompt a {
+    color: #ff69b4;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.chat-login-prompt a:hover {
+    text-decoration: underline;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -244,6 +261,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const chatWidget = document.querySelector('.chat-widget');
     const chatToggle = document.getElementById('chat-toggle');
     const chatWindow = document.getElementById('chat-window');
     const chatClose = document.getElementById('chat-close');
@@ -251,18 +269,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const chatForm = document.getElementById('chatForm');
     const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
 
     // Add welcome message immediately
     addWelcomeMessage();
-    
-    // Then load chat history
-    loadChatHistory();
 
     chatToggle.addEventListener('click', () => {
         chatWindow.style.display = 'flex';
         chatWindow.classList.add('fadeIn');
-        messageInput.focus();
+        if (messageInput) {
+            messageInput.focus();
+        }
     });
 
     chatMinimize.addEventListener('click', () => {
@@ -288,6 +304,18 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.appendChild(typingDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         return typingDiv;
+    }
+
+    function addWelcomeMessage() {
+        const welcomeMessage = `👋 Hello! Welcome to Cake Siphosh! How can I assist you today?
+
+I can help you with:
+• Finding the perfect cake for your occasion
+• Custom cake designs and pricing
+• Dietary requirements and allergen information
+• Order status and delivery options
+• General bakery questions`;
+        addMessage(welcomeMessage, 'assistant');
     }
 
     async function sendMessage(message) {
@@ -319,51 +347,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    chatForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const message = messageInput.value.trim();
-        if (!message) return;
+    if (chatForm) {
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
 
-        messageInput.value = '';
-        await sendMessage(message);
-    });
-
-    async function loadChatHistory() {
-        try {
-            const response = await fetch('/chat/history');
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to load chat history');
-            }
-
-            if (data.history && data.history.length > 0) {
-                displayChatHistory(data.history);
-            }
-        } catch (error) {
-            console.error('Load history error:', error);
-            addMessage('Error: Failed to load chat history', 'assistant');
-        }
-    }
-
-    function displayChatHistory(history) {
-        chatMessages.innerHTML = '';
-        history.forEach(msg => {
-            addMessage(msg.message, msg.sender);
+            messageInput.value = '';
+            await sendMessage(message);
         });
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function addWelcomeMessage() {
-        const welcomeMessage = `👋 Hello! Welcome to Cake Siphosh! How can I assist you today?
-
-I can help you with:
-• Finding the perfect cake for your occasion
-• Custom cake designs and pricing
-• Dietary requirements and allergen information
-• Order status and delivery options
-• General bakery questions`;
-        addMessage(welcomeMessage, 'assistant');
     }
 });
 </script>
