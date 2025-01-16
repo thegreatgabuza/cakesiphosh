@@ -1319,10 +1319,8 @@ try:
     
     print(f"API Key validation passed. Key starts with: {api_key[:7]}...")
     
-    # Initialize OpenAI client with minimal required parameters
-    client = OpenAI(
-        api_key=api_key
-    )
+    # Initialize OpenAI client with only the required api_key parameter
+    client = OpenAI(api_key=api_key)
     
     # Test the client with a simple completion
     print("Testing OpenAI client with a simple request...")
@@ -2010,18 +2008,25 @@ def generate_ai_insights(orders, products):
         """
         
         # Get insights from OpenAI
-        client = OpenAI()
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a business analytics expert specializing in bakery operations."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        
-        insights = response.choices[0].message.content
-        
-        return insights
+        if not client:
+            return "<p class='text-danger'>OpenAI client is not initialized. Please check your API key configuration.</p>"
+            
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a business analytics expert specializing in bakery operations."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            insights = response.choices[0].message.content
+            
+            return insights
+            
+        except Exception as e:
+            print(f"Error generating AI insights: {e}")
+            return "<p class='text-danger'>Error generating insights. Please try again later.</p>"
         
     except Exception as e:
         print(f"Error generating AI insights: {e}")
@@ -2123,8 +2128,12 @@ def ai_assistant():
     try:
         message = request.json.get('message', '')
         
+        if not client:
+            return jsonify({
+                'response': "OpenAI client is not initialized. Please check your API key configuration."
+            }), 500
+        
         # Use OpenAI to understand the request
-        client = OpenAI()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
