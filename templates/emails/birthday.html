@@ -16,14 +16,21 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #ffffff;
         }
         .header {
             text-align: center;
             padding: 20px 0;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+            border-radius: 8px 8px 0 0;
+            color: white;
         }
         .header img {
             max-width: 150px;
             height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 4px solid white;
         }
         .content {
             background-color: #ffffff;
@@ -37,6 +44,7 @@
             color: #333333;
             margin-bottom: 20px;
             text-align: left;
+            line-height: 1.8;
         }
         .highlight {
             color: #ff6b6b;
@@ -46,25 +54,36 @@
             display: inline-block;
             padding: 12px 24px;
             background-color: #ff6b6b;
-            color: #ffffff;
+            color: #ffffff !important;
             text-decoration: none;
             border-radius: 4px;
             margin: 20px 0;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #ff8e8e;
+            transform: translateY(-2px);
         }
         .offer {
             background-color: #e8f5e9;
             border-radius: 4px;
-            padding: 15px;
+            padding: 20px;
             margin: 20px 0;
             color: #2e7d32;
             text-align: center;
             font-size: 18px;
+            border: 2px dashed #4caf50;
         }
         .footer {
             text-align: center;
             color: #666666;
             font-size: 14px;
             margin-top: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 0 0 8px 8px;
         }
         .social-links {
             margin: 20px 0;
@@ -72,14 +91,24 @@
         .social-links a {
             margin: 0 10px;
             text-decoration: none;
+            display: inline-block;
+        }
+        .social-links img {
+            width: 32px;
+            height: 32px;
+            vertical-align: middle;
+            transition: transform 0.3s ease;
+        }
+        .social-links a:hover img {
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ url_for('static', filename='images/germanchoc.jpeg') }}" 
-                 alt="German Chocolate Cake"
+            <img src="{{ cake_image_url|default('https://raw.githubusercontent.com/thegreatgabuza/cakesiphosh/main/static/images/3Dimages/Cake%20(HD).png', true) }}" 
+                 alt="Birthday Cake"
                  style="max-width: 200px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
             <h1>🎉 Happy Birthday Coming Soon! 🎂</h1>
         </div>
@@ -97,17 +126,23 @@
             {% endif %}
             
             <div style="text-align: center;">
-                <a href="https://cakesiphosh.com/special-offers" class="cta-button">
-                    Check Out Our Birthday Specials
+                <a href="https://cakesiphosh.com/menu" class="cta-button">
+                    View Our Birthday Cakes
                 </a>
             </div>
         </div>
         
         <div class="footer">
             <div class="social-links">
-                <a href="#"><img src="https://img.icons8.com/color/24/000000/facebook-new.png" alt="Facebook"></a>
-                <a href="#"><img src="https://img.icons8.com/color/24/000000/instagram-new.png" alt="Instagram"></a>
-                <a href="#"><img src="https://img.icons8.com/color/24/000000/twitter.png" alt="Twitter"></a>
+                <a href="https://facebook.com/cakesiphosh" target="_blank">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTI0IDEyLjA3QzI0IDUuNDEgMTguNjMgMCAxMiAwUzAgNS40IDAgMTIuMDdDMCAxOC4xIDQuODggMjMuMSAxMS4yNSAyNHYtOC43N0g3Ljg3di0zLjE1aDMuMzhWOS4zNWMwLTMuMzUgMi03LjUgNy41LTcuNXYzLjE1Yy0uODQgMC0xLjk3LjE1LTEuOTcgMS45N3YyLjE2aDMuNDVsLS41NSAzLjE1aC0yLjl2OC43N0MxOS4xMiAyMy4xIDI0IDE4LjEgMjQgMTIuMDd6IiBmaWxsPSIjMTk3N0YyIi8+PC9zdmc+" alt="Facebook">
+                </a>
+                <a href="https://instagram.com/cakesiphosh" target="_blank">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDIuMTYzYzMuMjA0IDAgMy41ODQuMDEyIDQuODUuMDcgMy4yNTIuMTQ4IDQuNzcxIDEuNjkxIDQuOTE5IDQuOTE5LjA1OCAxLjI2NS4wNjkgMS42NDUuMDY5IDQuODQ5IDAgMy4yMDUtLjAxMiAzLjU4NC0uMDY5IDQuODQ5LS4xNDkgMy4yMjUtMS42NjQgNC43NzEtNC45MTkgNC45MTktMS4yNjUuMDU4LTEuNjQ1LjA2OS00Ljg1LjA2OS0zLjIwNCAwLTMuNTg0LS4wMTItNC44NDktLjA2OS0zLjI2LS4xNDktNC43NzEtMS42OTktNC45MTktNC45Mi0uMDU4LTEuMjY1LS4wNy0xLjY0NC0uMDctNC44NDkgMC0zLjIwNC4wMTMtMy41ODMuMDctNC44NDkuMTQ5LTMuMjI3IDEuNjY0LTQuNzcxIDQuOTE5LTQuOTE5IDEuMjY2LS4wNTcgMS42NDUtLjA2OSA0Ljg0OS0uMDY5ek0xMiAwQzguNzQxIDAgOC4zMzMuMDE0IDcuMDUzLjA3MiAyLjY5NS4yNzIuMjczIDIuNjkuMDczIDcuMDUyLjAxNCA4LjMzMyAwIDguNzQxIDAgMTJjMCAzLjI1OS4wMTQgMy42NjguMDcyIDQuOTQ4LjIgNC4zNTggMi42MTggNi43OCA2Ljk4IDYuOThDOC4zMzMgMjMuOTg2IDguNzQxIDI0IDEyIDI0YzMuMjU5IDAgMy42NjgtLjAxNCA0Ljk0OC0uMDcyIDQuMzU0LS4yIDYuNzgyLTIuNjE4IDYuOTc5LTYuOTguMDU5LTEuMjguMDczLTEuNjg5LjA3My00Ljk0OCAwLTMuMjU5LS4wMTQtMy42NjctLjA3Mi00Ljk0Ny0uMTk2LTQuMzU0LTIuNjE3LTYuNzgtNi45NzktNi45OEMxNS42NjguMDE0IDE1LjI1OSAwIDEyIDB6bTAgNS44MzhhNi4xNjIgNi4xNjIgMCAxMDAgMTIuMzI0IDYuMTYyIDYuMTYyIDAgMDAwLTEyLjMyNHpNMTIgMTZhNCA0IDAgMTEwLTggNCA0IDAgMDEwIDh6bTYuNDA2LTExLjg0NWExLjQ0IDEuNDQgMCAxMDAgMi44ODEgMS40NCAxLjQ0IDAgMDAwLTIuODgxeiIgZmlsbD0iI0U0NDA1RiIvPjwvc3ZnPg==" alt="Instagram">
+                </a>
+                <a href="https://twitter.com/cakesiphosh" target="_blank">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIzLjk1MyA0LjU3YTEwIDEwIDAgMDEtMi44MjUuNzc1IDQuOTU4IDQuOTU4IDAgMDAyLjE2My0yLjcyM2MtLjk1MS41NTUtMi4wMDUuOTU5LTMuMTI3IDEuMTg0YTQuOTIgNC45MiAwIDAwLTguMzg0IDQuNDgyQzcuNjkgOC4wOTUgNC4wNjcgNi4xMyAxLjY0IDMuMTYyYTQuODIyIDQuODIyIDAgMDAtLjY2NiAyLjQ3NWMwIDEuNzEuODcgMy4yMTMgMi4xODggNC4wOTZhNC45MDQgNC45MDQgMCAwMS0yLjIyOC0uNjE2di4wNmE0LjkyMyA0LjkyMyAwIDAwMy45NDYgNC44MjcgNC45OTYgNC45OTYgMCAwMS0yLjIxMi4wODUgNC45MzYgNC45MzYgMCAwMDQuNjA0IDMuNDE3IDkuODY3IDkuODY3IDAgMDEtNi4xMDIgMi4xMDVjLS4zOSAwLS43NzktLjAyMy0xLjE3LS4wNjdhMTMuOTk1IDEzLjk5NSAwIDAwNy41NTcgMi4yMDljOS4wNTMgMCAxMy45OTgtNy40OTYgMTMuOTk4LTEzLjk4NSAwLS4yMSAwLS40Mi0uMDE1LS42M0E5LjkzNSA5LjkzNSAwIDAwMjQgNC41OXoiIGZpbGw9IiMxREExRjIiLz48L3N2Zz4=" alt="Twitter">
+                </a>
             </div>
             <p>Cake Siphosh - Making Your Special Days Sweeter</p>
             <p style="font-size: 12px; color: #999999;">

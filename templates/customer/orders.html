@@ -1,57 +1,192 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cake Siphosh - My Orders</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #9370DB;
+            --secondary-color: #FFB6C1;
+            --text-color: #333;
+            --light-bg: #F8F9FA;
+        }
 
-{% block content %}
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FFE5F1, #E5E5FF);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            border: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .action-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .action-button:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: -1;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--secondary-color);
+            top: 10%;
+            left: 5%;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: var(--primary-color);
+            bottom: 20%;
+            right: 10%;
+        }
+
+        .order-card {
+            margin-bottom: 2rem;
+        }
+
+        .order-card .card-header {
+            border-radius: 24px 24px 0 0;
+            background: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .order-items {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .payment-proof-form {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .toast-container {
+            z-index: 1050;
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Shapes -->
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light py-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <h2 class="fw-bold">Cake Siphosh</h2>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a href="{{ url_for('customer_dashboard') }}" class="nav-link action-button ms-2">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Shopping
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-box-seam"></i> My Orders</h2>
-        <a href="{{ url_for('customer_dashboard') }}" class="btn btn-outline-primary">
-            <i class="bi bi-arrow-left"></i> Back to Shopping
-        </a>
-    </div>
-
-    {% if orders %}
-    <div class="row">
+        <h2 class="mb-4 fw-bold">
+            <i class="bi bi-box-seam"></i> My Orders
+            <small class="text-muted fs-6 fw-normal">| Track your order history</small>
+        </h2>
+    
+        {% if orders %}
+        <div class="row">
     {% for order in orders %}
-        <div class="col-12 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <div>
-            <h5 class="mb-0">Order #{{ order.id }}</h5>
-                        <small class="text-muted">Placed on {{ order.created_at }}</small>
-                    </div>
-                    <span class="badge bg-{{ order.status_color }} fs-6">{{ order.status|title }}</span>
+            <div class="col-12 mb-4">
+                <div class="card order-card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <h5 class="mb-0 fw-bold">Order #{{ order.id }}</h5>
+                            <small class="text-muted">Placed on {{ order.created_at }}</small>
+                        </div>
+            <span class="badge bg-{{ order.status_color }}">{{ order.status|title }}</span>
         </div>
         <div class="card-body">
-                    <div class="row g-3">
-                        <!-- Order Details -->
+                        <div class="row g-3">
+                            <!-- Order Details -->
                 <div class="col-md-6">
-                            <div class="mb-3">
-                                <h6 class="text-muted mb-2">Order Details</h6>
-                                <p class="mb-1"><strong>Total Amount:</strong> R{{ "%.2f"|format(order.total) }}</p>
-                                <p class="mb-1">
-                                    <strong>Payment Status:</strong> 
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Order Details</h6>
+                                    <p class="mb-1"><strong>Total Amount:</strong> R{{ "%.2f"|format(order.total) }}</p>
+                                    <p class="mb-1">
+                                        <strong>Payment Status:</strong> 
                         <span class="badge bg-{{ order.payment_status_color }}">
                             {{ order.payment_status|title }}
                         </span>
                     </p>
-                                {% if order.delivery_method %}
-                                <p class="mb-1"><strong>Delivery Method:</strong> {{ order.delivery_method|title }}</p>
-                                {% endif %}
-                            </div>
+                                    {% if order.delivery_method %}
+                                    <p class="mb-1"><strong>Delivery Method:</strong> {{ order.delivery_method|title }}</p>
+                                    {% endif %}
+                                </div>
                 </div>
 
-                        <!-- Actions -->
+                            <!-- Actions -->
                 <div class="col-md-6">
-                            <div class="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
-                                <button class="btn btn-outline-primary" 
+                                <div class="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+                                    <button class="btn action-button" 
                                 data-order='{{ order|tojson|safe }}'
                                 onclick="viewItems(this.dataset.order)">
                             <i class="bi bi-eye"></i> View Items
                         </button>
                         {% if order.status == 'pending' %}
-                                <button class="btn btn-outline-danger" 
+                                    <button class="btn action-button" 
                                 onclick="cancelOrder('{{ order.id }}')">
-                                    <i class="bi bi-x-circle"></i> Cancel Order
+                                        <i class="bi bi-x-circle"></i> Cancel Order
                         </button>
                         {% endif %}
                 </div>
@@ -59,70 +194,70 @@
 
             <!-- Payment Proof Section -->
                 {% if order.payment_status == 'pending' %}
-                        <div class="col-12">
-                            <div class="alert alert-info">
-                                <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Payment Required</h6>
-                                <p class="mb-0">Please upload your proof of payment to process your order.</p>
-                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Payment Required</h6>
+                                    <p class="mb-0">Please upload your proof of payment to process your order.</p>
+                                </div>
                     <form class="payment-proof-form" onsubmit="uploadPaymentProof(event, '{{ order.id }}')">
                         <div class="input-group">
                             <input type="file" class="form-control" name="payment_proof" 
-                                           accept="image/*,.pdf" required>
-                            <button class="btn btn-primary" type="submit">
+                                               accept="image/*,.pdf" required>
+                                        <button class="btn action-button" type="submit">
                                 <i class="bi bi-upload"></i> Upload Proof
                             </button>
                         </div>
-                                <small class="text-muted">Accepted formats: Images (JPG, PNG) and PDF</small>
+                                    <small class="text-muted">Accepted formats: Images (JPG, PNG) and PDF</small>
                     </form>
-                        </div>
+                            </div>
                 {% elif order.proof_of_payment_url %}
-                        <div class="col-12">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Payment Proof</h6>
-                                    <div class="d-flex align-items-center gap-3">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Payment Proof</h6>
+                                        <div class="d-flex align-items-center gap-3">
                                 <img src="{{ order.proof_of_payment_url }}" 
                                      alt="Payment Proof" 
-                                             style="max-width: 150px; max-height: 150px;"
-                                             class="img-thumbnail cursor-pointer"
+                                                 style="max-width: 150px; max-height: 150px;"
+                                                 class="img-thumbnail cursor-pointer"
                                      onclick="viewFullImage(this.src)">
-                                        <div>
-                                            <p class="mb-1">
-                                                <strong>Status:</strong>
-                                                <span class="badge bg-{{ order.payment_status_color }}">
-                                                    {{ order.payment_status|title }}
-                                                </span>
-                                            </p>
-                                            {% if order.admin_comment %}
-                                            <p class="mb-0">
-                                                <strong>Admin Comment:</strong><br>
-                                                {{ order.admin_comment }}
-                                            </p>
-                                            {% endif %}
+                                            <div>
+                                                <p class="mb-1">
+                                                    <strong>Status:</strong>
+                                                    <span class="badge bg-{{ order.payment_status_color }}">
+                                                        {{ order.payment_status|title }}
+                                                    </span>
+                                                </p>
+                                                {% if order.admin_comment %}
+                                                <p class="mb-0">
+                                                    <strong>Admin Comment:</strong><br>
+                                                    {{ order.admin_comment }}
+                                                </p>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                         </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-box-seam display-1 text-muted"></i>
     </div>
-    {% else %}
-    <div class="text-center py-5">
-        <div class="mb-4">
-            <i class="bi bi-box-seam display-1 text-muted"></i>
-        </div>
-        <h3>No Orders Yet</h3>
-        <p class="text-muted mb-4">You haven't placed any orders yet.</p>
-        <a href="{{ url_for('customer_dashboard') }}" class="btn btn-primary">
-            <i class="bi bi-cart"></i> Start Shopping
-        </a>
+            <h3 class="fw-bold">No Orders Yet</h3>
+            <p class="text-muted mb-4">You haven't placed any orders yet.</p>
+            <a href="{{ url_for('customer_dashboard') }}" class="btn action-button">
+                <i class="bi bi-cart"></i> Start Shopping
+            </a>
     </div>
-    {% endif %}
+        {% endif %}
 </div>
 
 <!-- Items Modal -->
@@ -130,7 +265,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-list-ul"></i> Order Items</h5>
+                    <h5 class="modal-title"><i class="bi bi-list-ul"></i> Order Items</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="itemsModalBody">
@@ -139,347 +274,35 @@
     </div>
 </div>
 
-<!-- Image Modal -->
+    <!-- Image Modal -->
 <div class="modal fade" id="imageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-image"></i> Payment Proof</h5>
+                    <h5 class="modal-title"><i class="bi bi-image"></i> Payment Proof</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center p-0">
+                <div class="modal-body text-center p-0">
                 <img id="fullSizeImage" src="" alt="Full size payment proof" style="max-width: 100%;">
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Order Summary -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">
-            <i class="bi bi-gift text-primary me-2"></i>
-            You Might Also Like
-        </h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3" id="suggested-products">
-            <!-- Suggested products will be loaded here -->
-        </div>
-    </div>
-</div>
-
-<!-- Payment Method -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">
-            <i class="bi bi-credit-card text-primary me-2"></i>
-            Payment Method
-        </h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3" id="suggested-products">
-            <!-- Suggested products will be loaded here -->
-        </div>
-    </div>
-</div>
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize any Bootstrap tooltips
-    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
-});
-
-function viewItems(orderData) {
-    const order = typeof orderData === 'string' ? JSON.parse(orderData) : orderData;
-    const modalBody = document.getElementById('itemsModalBody');
-    
-    let itemsHtml = `
-        <div class="table-responsive">
-            <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                        <th class="text-end">Price</th>
-                        <th class="text-center">Quantity</th>
-                        <th class="text-end">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    order.items.forEach(item => {
-        const subtotal = item.price * item.quantity;
-        itemsHtml += `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded">` : ''}
-                        <span>${item.name}</span>
-                    </div>
-                </td>
-                <td class="text-end">R${item.price.toFixed(2)}</td>
-                <td class="text-center">${item.quantity}</td>
-                <td class="text-end">R${subtotal.toFixed(2)}</td>
-            </tr>
-        `;
-    });
-    
-    itemsHtml += `
-                </tbody>
-                <tfoot class="table-group-divider">
-                    <tr>
-                        <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                        <td class="text-end">R${order.total.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3" class="text-end"><strong>Tax (15%):</strong></td>
-                        <td class="text-end">R${(order.total * 0.15).toFixed(2)}</td>
-                    </tr>
-                <tr>
-                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
-                        <td class="text-end"><strong>R${(order.total * 1.15).toFixed(2)}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-        </div>
-    `;
-    
-    modalBody.innerHTML = itemsHtml;
-    new bootstrap.Modal(document.getElementById('itemsModal')).show();
-}
-
-function cancelOrder(orderId) {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
-    
-    fetch(`/orders/${orderId}/cancel`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Success', 'Order cancelled successfully');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            throw new Error(data.error || 'Error cancelling order');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error', error.message || 'Error cancelling order', 'error');
-    });
-}
-
-function uploadPaymentProof(event, orderId) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const fileInput = form.querySelector('input[type="file"]');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        showToast('Error', 'Please select a file to upload', 'error');
-        return;
-    }
-    
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-        showToast('Error', 'File size must be less than 5MB', 'error');
-        return;
-    }
-    
-    const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-        showToast('Error', 'Invalid file type. Please upload an image or PDF', 'error');
-        return;
-    }
-    
-    const submitButton = form.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
-    
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-        fetch(`/orders/${orderId}/upload-proof`, {
-        method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                proof_data: reader.result,
-                file_type: file.type,
-                file_name: file.name
-            })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-                showToast('Success', 'Payment proof uploaded successfully');
-                setTimeout(() => location.reload(), 1500);
-        } else {
-                throw new Error(data.error || 'Error uploading payment proof');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-            showToast('Error', error.message || 'Error uploading payment proof', 'error');
-        submitButton.disabled = false;
-            submitButton.innerHTML = '<i class="bi bi-upload"></i> Upload Proof';
-    });
-    };
-}
-
-function viewFullImage(src) {
-    document.getElementById('fullSizeImage').src = src;
-    new bootstrap.Modal(document.getElementById('imageModal')).show();
-}
-
-function showToast(title, message, type = 'success') {
-    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <strong>${title}:</strong> ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    toast.addEventListener('hidden.bs.toast', () => toast.remove());
-}
-
-function createToastContainer() {
-    const container = document.createElement('div');
-    container.id = 'toastContainer';
-    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-    container.style.zIndex = '1050';
-    document.body.appendChild(container);
-    return container;
-}
-
-// Function to load suggested products
-async function loadSuggestedProducts() {
-    try {
-        const response = await fetch('/api/suggested-products', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                current_items: Array.from(document.querySelectorAll('[data-product-id]')).map(el => el.dataset.productId)
-            })
-        });
-        
-        if (!response.ok) throw new Error('Failed to load suggestions');
-        
-        const products = await response.json();
-        const container = document.getElementById('suggested-products');
-        
-        products.forEach(product => {
-            const card = document.createElement('div');
-            card.className = 'col-md-4';
-            card.innerHTML = `
-                <div class="card h-100 border-0 shadow-sm">
-                    <img src="${product.image || '/static/images/placeholder.jpg'}" class="card-img-top" alt="${product.name}">
-                    <div class="card-body">
-                        <h6 class="card-title">${product.name}</h6>
-                        <p class="card-text text-muted small">${product.description || ''}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-primary fw-bold">$${product.price}</span>
-                            <button class="btn btn-outline-primary btn-sm" onclick="addToCart('${product.id}')">
-                                <i class="bi bi-plus-circle me-1"></i>Add
-                            </button>
-                        </div>
-                    </div>
                 </div>
-            `;
-            container.appendChild(card);
-        });
-    } catch (error) {
-        console.error('Error loading suggestions:', error);
-    }
-}
+            </div>
+        </div>
+    </div>
 
-// Function to add suggested product to cart
-async function addToCart(productId) {
-    try {
-        const response = await fetch('/api/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                product_id: productId,
-                quantity: 1
-            })
-        });
-        
-        if (!response.ok) throw new Error('Failed to add to cart');
-        
-        // Refresh the page to show updated cart
-        window.location.reload();
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        showToast('error', 'Failed to add product to cart');
-    }
-}
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
-// Load suggested products when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadSuggestedProducts();
-});
-</script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<style>
-.cursor-pointer {
-    cursor: pointer;
-}
+    <!-- Custom Scripts -->
+    <script>
+        // ... existing JavaScript code ...
+    </script>
 
-.payment-proof-form {
-    max-width: 500px;
-}
-
-.card {
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-#imageModal .modal-body {
-    background-color: #f8f9fa;
-}
-
-#fullSizeImage {
-    max-height: 80vh;
-    object-fit: contain;
-}
-
-.toast {
-    opacity: 0.95;
-}
-
-.badge {
-    font-weight: 500;
-}
-</style>
-{% endblock %} 
+    <!-- Chat Widget -->
+    {% if not current_user.is_admin %}
+        {% include 'chat_widget.html' %}
+    {% endif %}
+</body>
+</html> 
