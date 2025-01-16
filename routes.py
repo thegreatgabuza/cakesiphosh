@@ -11,7 +11,6 @@ import json
 import random
 import pandas as pd
 import base64
-from openai import OpenAI
 from firebase_admin import firestore
 import google.generativeai as genai
 
