@@ -13,6 +13,7 @@ import pandas as pd
 import base64
 from openai import OpenAI
 from firebase_admin import firestore
+import google.generativeai as genai
 
 from __init__ import app, db
 from models import Order, Settings, Product, Ingredient, ProductIngredient, Cart, User, UserPreferences, Chat
@@ -1299,49 +1300,41 @@ When responding:
 - If unsure about specific details, suggest contacting the store directly
 - Offer relevant suggestions based on customer inquiries"""
 
-# Initialize OpenAI client with better error handling
+# Initialize Gemini client with better error handling
 try:
-    api_key = os.getenv('OPENAI_API_KEY')
-    print("\nOpenAI API Key Debug:")
+    api_key = os.getenv('GOOGLE_API_KEY')
+    print("\nGoogle API Key Debug:")
     print(f"API Key exists: {bool(api_key)}")
     print(f"API Key length: {len(api_key) if api_key else 0}")
     
     if not api_key:
-        raise ValueError("OpenAI API key is not set in environment variables")
+        raise ValueError("Google API key is not set in environment variables")
     
     # Clean the API key
     api_key = api_key.strip()  # Remove whitespace
     api_key = api_key.strip('"\'')  # Remove quotes
     
-    # Validate API key format
-    if not api_key.startswith(('sk-', 'sk-org-')):
-        raise ValueError(f"Invalid OpenAI API key format. Must start with 'sk-' or 'sk-org-'. Key starts with: {api_key[:5]}")
+    print(f"API Key validation passed.")
     
-    print(f"API Key validation passed. Key starts with: {api_key[:7]}...")
-    
-    # Initialize OpenAI client with only the required api_key parameter
-    from openai import OpenAI
-    client = OpenAI(api_key=api_key)
+    # Initialize Gemini client
+    genai.configure(api_key=api_key)
     
     # Test the client with a simple completion
-    print("Testing OpenAI client with a simple request...")
-    test_response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Hello"}],
-        max_tokens=5
-    )
-    print("OpenAI client test successful!")
-    print(f"Test response received: {test_response.choices[0].message.content}")
+    print("Testing Gemini client with a simple request...")
+    model = genai.GenerativeModel('gemini-pro')
+    test_response = model.generate_content("Hello")
+    print("Gemini client test successful!")
+    print(f"Test response received: {test_response.text}")
     
 except ValueError as ve:
-    print(f"OpenAI API Key Error: {str(ve)}")
-    client = None
+    print(f"Google API Key Error: {str(ve)}")
+    model = None
 except Exception as e:
-    print(f"OpenAI Client Error: {str(e)}")
+    print(f"Gemini Client Error: {str(e)}")
     print("Full error details:")
     import traceback
     traceback.print_exc()
-    client = None
+    model = None
 
 @app.route('/chat', methods=['GET'])
 @login_required
@@ -1352,12 +1345,12 @@ def chat_interface():
 def chat_with_ai():
     print("\n=== Starting chat request ===")
     
-    if not client:
-        error_msg = "OpenAI client is not initialized. Please check your OPENAI_API_KEY in .env file."
+    if not model:
+        error_msg = "Gemini client is not initialized. Please check your GOOGLE_API_KEY in .env file."
         print(f"Error: {error_msg}")
         return jsonify({
             'error': error_msg,
-            'details': 'Make sure your .env file contains a valid OpenAI API key starting with sk-'
+            'details': 'Make sure your .env file contains a valid Google API key'
         }), 500
 
     try:
@@ -1374,38 +1367,24 @@ def chat_with_ai():
         
         # Get recent chat history (last 3 messages)
         chat_history = session.get('chat_history', [])[-3:]
-        history_messages = []
+        history_text = ""
         for msg in chat_history:
-            history_messages.append({
-                "role": "user" if msg['sender'] == 'user' else "assistant",
-                "content": msg['message']
-            })
+            history_text += f"{'User' if msg['sender'] == 'user' else 'Assistant'}: {msg['message']}\n"
 
-        # Prepare messages for OpenAI
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            *history_messages,
-            {"role": "user", "content": user_message}
-        ]
+        # Prepare prompt for Gemini
+        system_context = SYSTEM_PROMPT + "\n\nPrevious conversation:\n" + history_text if history_text else SYSTEM_PROMPT
+        full_prompt = f"{system_context}\n\nUser: {user_message}\nAssistant:"
         
-        print("Sending request to OpenAI API...")
+        print("Sending request to Gemini API...")
         
         try:
-            completion = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=500,
-                top_p=0.9,
-                frequency_penalty=0.5,
-                presence_penalty=0.5
-            )
+            response = model.generate_content(full_prompt)
             
-            ai_message = completion.choices[0].message.content.strip()
+            ai_message = response.text.strip()
             print(f"Received response: {ai_message[:100]}...")
             
             if not ai_message:
-                raise ValueError("Empty response from OpenAI")
+                raise ValueError("Empty response from Gemini")
             
             # Update chat history
             current_time = datetime.now().isoformat()
@@ -1431,7 +1410,7 @@ def chat_with_ai():
                     })
             except Exception as db_error:
                 print(f"Database error (non-critical): {str(db_error)}")
-            
+                
             return jsonify({
                 'response': ai_message,
                 'history': chat_history
@@ -1439,15 +1418,9 @@ def chat_with_ai():
             
         except Exception as api_error:
             error_msg = str(api_error)
-            print(f"OpenAI API Error: {error_msg}")
+            print(f"Gemini API Error: {error_msg}")
             print("Full error details:")
             traceback.print_exc()
-            
-            if "api_key" in error_msg.lower() or "authentication" in error_msg.lower():
-                return jsonify({
-                    'error': 'OpenAI authentication failed',
-                    'details': 'Please check your API key in the .env file'
-                }), 401
             
             return jsonify({
                 'error': 'Failed to get AI response',
@@ -1985,8 +1958,8 @@ def generate_ai_insights(orders, products):
             for pid, count in bottom_products
         ) or "No data available"
         
-        # Prepare prompt for OpenAI
-        prompt = f"""
+        # Prepare prompt for Gemini
+        prompt = f"""You are a business analytics expert specializing in bakery operations.
         Based on the following bakery data, provide 3-4 key business insights and recommendations:
         
         Recent Performance:
@@ -2005,24 +1978,19 @@ def generate_ai_insights(orders, products):
         3. Customer behavior patterns
         4. Specific recommendations for improvement
         
-        Format the response in HTML with bullet points.
-        """
+        Format the response in HTML with bullet points."""
         
-        # Get insights from OpenAI
-        if not client:
-            return "<p class='text-danger'>OpenAI client is not initialized. Please check your API key configuration.</p>"
+        # Get insights from Gemini
+        if not model:
+            return "<p class='text-danger'>Gemini client is not initialized. Please check your API key configuration.</p>"
             
         try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a business analytics expert specializing in bakery operations."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
+            response = model.generate_content(prompt)
             
-            insights = response.choices[0].message.content
-            return insights
+            if response.text:
+                return response.text
+            else:
+                return "<p class='text-danger'>Error: Empty response from Gemini. Please try again later.</p>"
             
         except Exception as e:
             print(f"Error generating AI insights: {e}")
@@ -2128,53 +2096,23 @@ def ai_assistant():
     try:
         message = request.json.get('message', '')
         
-        if not client:
+        if not model:
             return jsonify({
-                'response': "OpenAI client is not initialized. Please check your API key configuration."
+                'response': "Gemini client is not initialized. Please check your API key configuration."
             }), 500
         
-        # Use OpenAI to understand the request
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": """You are a bakery assistant. Extract the product name and quantity from the user's message.
-                Return ONLY a JSON object with 'product_name' and 'quantity' fields. If you can't determine either, set them to null.
-                Example: {"product_name": "chocolate cake", "quantity": 50}"""},
-                {"role": "user", "content": message}
-            ]
-        )
+        # Use Gemini to understand the request
+        response = model.generate_content(message)
         
-        # Parse the AI response
-        try:
-            import json
-            ai_response = json.loads(response.choices[0].message.content)
-            product_name = ai_response.get('product_name')
-            quantity = ai_response.get('quantity')
-            
-            if not product_name or not quantity:
-                return jsonify({
-                    'response': "I'm not sure about the product or quantity. Could you please specify both? For example: 'Can we make 50 chocolate cakes?'"
-                })
-            
-            # Check feasibility
-            result = check_order_feasibility(product_name, quantity)
-            
-            # Format response
-            if result['feasible']:
-                response_text = f"Yes! We can make {quantity} {product_name}(s). {result['reason']}. "
-                if result['details']['remaining_capacity'] > 0:
-                    response_text += f"We'll still have capacity for {result['details']['remaining_capacity']} more orders today."
-            else:
-                response_text = f"Sorry, we can't make {quantity} {product_name}(s) right now. {result['reason']}. "
-                if result['suggestions']:
-                    response_text += "\nSuggestions:\n- " + "\n- ".join(result['suggestions'])
-            
-            return jsonify({'response': response_text})
-            
-        except json.JSONDecodeError:
+        # Format response
+        if response.text:
             return jsonify({
-                'response': "I'm having trouble understanding that request. Could you rephrase it?"
+                'response': response.text
             })
+        else:
+            return jsonify({
+                'response': "Sorry, I couldn't generate a response. Please try again."
+            }), 500
             
     except Exception as e:
         print(f"AI Assistant error: {e}")
