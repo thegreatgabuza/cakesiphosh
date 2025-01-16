@@ -1268,7 +1268,7 @@ def admin_delete_proof(order_id):
         return jsonify({'success': False, 'error': str(e)})
 
 # System prompt for the chatbot
-SYSTEM_PROMPT = """You are a knowledgeable and friendly bakery assistant for Sweet Bakery. Your role is to help customers with their bakery-related inquiries and provide detailed, helpful responses.
+SYSTEM_PROMPT = """You are a knowledgeable and friendly bakery assistant for Cake Siphosh. Your role is to help customers with their bakery-related inquiries and provide detailed, helpful responses.
 
 Key Information:
 1. Products:
