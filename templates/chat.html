@@ -1,43 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Chat with Cake Siphosh{% endblock %}
-
 {% block content %}
-<div class="container py-5">
+<div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg border-0 rounded-3">
-                <div class="card-header bg-primary text-white py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-chat-dots-fill fs-4 me-2"></i>
-                        <h5 class="mb-0">Cake Siphosh Assistant</h5>
-                    </div>
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Chat with Bakery Assistant</h5>
+                    <button id="clearChat" class="btn btn-sm btn-light">Clear Chat</button>
                 </div>
-                <div class="card-body p-4">
-                    <div class="chat-messages mb-4" id="chatMessages" style="height: 400px; overflow-y: auto;">
-                        <!-- Welcome message -->
-                        <div class="message bot-message">
-                            <div class="message-content">
-                                <p>👋 Hello! I'm Cake Siphosh's AI assistant. How can I help you today?</p>
-                                <p>You can ask me about:</p>
-                                <ul>
-                                    <li>Our products and prices</li>
-                                    <li>Special orders and customization</li>
-                                    <li>Delivery options</li>
-                                    <li>Dietary requirements</li>
-                                    <li>Opening hours and location</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Chat input -->
-                    <form id="chatForm" class="chat-input">
+                <div class="card-body">
+                    <div id="chatMessages" class="chat-messages mb-3" style="height: 400px; overflow-y: auto;"></div>
+                    <form id="chatForm" class="mt-3">
                         <div class="input-group">
-                            <input type="text" id="messageInput" class="form-control" 
-                                   placeholder="Type your message here..." required>
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-send-fill"></i>
+                            <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." required>
+                            <button type="submit" class="btn btn-primary" id="sendButton">
+                                <span id="sendButtonText">Send</span>
+                                <span id="sendButtonLoading" class="d-none">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Sending...
+                                </span>
                             </button>
                         </div>
                     </form>
@@ -48,143 +30,250 @@
 </div>
 
 <style>
-.chat-messages {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.message {
+.chat-message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 15px;
     max-width: 80%;
-    margin-bottom: 1rem;
 }
 
 .user-message {
-    align-self: flex-end;
+    background-color: #e3f2fd;
+    margin-left: auto;
+    border-bottom-right-radius: 5px;
 }
 
-.bot-message {
-    align-self: flex-start;
+.assistant-message {
+    background-color: #f5f5f5;
+    margin-right: auto;
+    border-bottom-left-radius: 5px;
+}
+
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    margin: 10px auto;
+    text-align: center;
+    max-width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ef9a9a;
 }
 
 .message-content {
-    padding: 1rem;
-    border-radius: 1rem;
-    position: relative;
+    word-wrap: break-word;
 }
 
-.user-message .message-content {
-    background-color: var(--bs-primary);
-    color: white;
-    border-bottom-right-radius: 0.25rem;
+.message-time {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 5px;
 }
 
-.bot-message .message-content {
-    background-color: var(--bs-gray-200);
-    border-bottom-left-radius: 0.25rem;
+.chat-message ul {
+    margin: 10px 0;
+    padding-left: 20px;
 }
 
-.message-content p:last-child {
-    margin-bottom: 0;
-}
-
-.chat-input {
-    position: relative;
-}
-
-.typing-indicator {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    padding: 0.5rem;
-    color: var(--bs-gray-600);
-    font-style: italic;
-}
-
-/* Animations */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.message {
-    animation: slideIn 0.3s ease forwards;
+.chat-message li {
+    margin: 5px 0;
 }
 </style>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.getElementById('chatMessages');
     const chatForm = document.getElementById('chatForm');
     const messageInput = document.getElementById('messageInput');
-    const chatMessages = document.getElementById('chatMessages');
+    const clearChatBtn = document.getElementById('clearChat');
+    const sendButton = document.getElementById('sendButton');
+    const sendButtonText = document.getElementById('sendButtonText');
+    const sendButtonLoading = document.getElementById('sendButtonLoading');
+
+    // Add welcome message immediately
+    addWelcomeMessage();
     
-    function addMessage(content, isUser = false) {
+    // Then load chat history
+    loadChatHistory();
+
+    function setLoading(isLoading) {
+        messageInput.disabled = isLoading;
+        sendButton.disabled = isLoading;
+        if (isLoading) {
+            sendButtonText.classList.add('d-none');
+            sendButtonLoading.classList.remove('d-none');
+        } else {
+            sendButtonText.classList.remove('d-none');
+            sendButtonLoading.classList.add('d-none');
+        }
+    }
+
+    function addMessage(message, sender, timestamp = new Date()) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        messageDiv.className = `chat-message ${sender}-message`;
         
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-        messageContent.innerHTML = content;
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = message;
+        messageDiv.appendChild(contentDiv);
         
-        messageDiv.appendChild(messageContent);
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = new Date(timestamp).toLocaleTimeString();
+        messageDiv.appendChild(timeDiv);
+        
         chatMessages.appendChild(messageDiv);
-        
-        // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-    
-    function showTypingIndicator() {
-        const indicator = document.createElement('div');
-        indicator.className = 'message bot-message typing-indicator';
-        indicator.innerHTML = '<div class="message-content">Typing...</div>';
-        chatMessages.appendChild(indicator);
+
+    function addErrorMessage(error, details = '') {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = `Error: ${error}`;
+        if (details) {
+            const detailsDiv = document.createElement('div');
+            detailsDiv.style.fontSize = '0.8em';
+            detailsDiv.style.marginTop = '5px';
+            detailsDiv.textContent = details;
+            errorDiv.appendChild(detailsDiv);
+        }
+        chatMessages.appendChild(errorDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        return indicator;
+        
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
     }
-    
-    chatForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const message = messageInput.value.trim();
-        if (!message) return;
-        
-        // Add user message
-        addMessage(message, true);
-        messageInput.value = '';
-        
-        // Show typing indicator
-        const typingIndicator = showTypingIndicator();
-        
+
+    async function sendMessage(message) {
         try {
-            // Send message to backend
-            const response = await fetch('/chat', {
+            const response = await fetch('/chat/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ message: message })
             });
-            
+
             const data = await response.json();
             
-            // Remove typing indicator
-            typingIndicator.remove();
+            if (!response.ok) {
+                throw new Error(data.error || data.details || 'Failed to send message');
+            }
             
-            // Add bot response
-            addMessage(data.response);
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Update chat display with new history
+            if (data.history) {
+                displayChatHistory(data.history);
+            } else if (data.response) {
+                // If no history but have response, just add the new messages
+                addMessage(message, 'user');
+                addMessage(data.response, 'assistant');
+            }
             
         } catch (error) {
-            console.error('Error:', error);
-            typingIndicator.remove();
-            addMessage('Sorry, I encountered an error. Please try again later.');
+            console.error('Chat error:', error);
+            addErrorMessage(error.message);
+            // Add the user's message even if there was an error
+            addMessage(message, 'user');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Handle form submission
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // Clear input and show loading state
+        messageInput.value = '';
+        setLoading(true);
+        
+        await sendMessage(message);
+    });
+
+    // Handle clear chat
+    clearChatBtn.addEventListener('click', async function() {
+        if (!confirm('Are you sure you want to clear the chat history?')) return;
+
+        try {
+            const response = await fetch('/chat/clear', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to clear chat');
+            }
+            
+            chatMessages.innerHTML = '';
+            addWelcomeMessage();
+        } catch (error) {
+            console.error('Clear chat error:', error);
+            addErrorMessage('Failed to clear chat history');
         }
     });
+
+    async function loadChatHistory() {
+        try {
+            const response = await fetch('/chat/history');
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to load chat history');
+            }
+            
+            if (data.history && data.history.length > 0) {
+                displayChatHistory(data.history);
+            }
+        } catch (error) {
+            console.error('Load history error:', error);
+            addErrorMessage('Failed to load chat history');
+        }
+    }
+
+    function displayChatHistory(history) {
+        // Clear existing messages but keep welcome message if it exists
+        const welcomeMessage = chatMessages.querySelector('.welcome-message');
+        chatMessages.innerHTML = '';
+        if (welcomeMessage) {
+            chatMessages.appendChild(welcomeMessage);
+        }
+        
+        history.forEach(msg => {
+            addMessage(msg.message, msg.sender, msg.timestamp);
+        });
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addWelcomeMessage() {
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'chat-message assistant-message welcome-message';
+        welcomeDiv.innerHTML = `
+            <div class="message-content">
+                <div>👋 Hello! I'm your bakery assistant. How can I help you today?</div>
+                <div>I can help you with:</div>
+                <ul>
+                    <li>Finding the perfect cake for your occasion</li>
+                    <li>Custom cake designs and pricing</li>
+                    <li>Dietary requirements and allergen information</li>
+                    <li>Order status and delivery options</li>
+                    <li>General bakery questions</li>
+                </ul>
+            </div>
+            <div class="message-time">Just now</div>
+        `;
+        chatMessages.appendChild(welcomeDiv);
+    }
 });
 </script>
 {% endblock %} 

@@ -1,24 +1,21 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify, abort
 from functools import wraps
-from app import app
-from models import Order, Settings, Product, Ingredient, ProductIngredient, Cart, User, UserPreferences, Chat
-from config import db
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta
+from flask_login import login_required, login_user, logout_user, current_user
 import uuid
 import os
-from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
-import pandas as pd
-from flask_login import login_required, login_user, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-import base64
-from firebase_admin import firestore
-import openai
-from firebase_admin import auth
-import random
 import pytz
+import json
+import random
+import pandas as pd
+import base64
+from openai import OpenAI
+from firebase_admin import firestore
 
-# Configure OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+from __init__ import app, db
+from models import Order, Settings, Product, Ingredient, ProductIngredient, Cart, User, UserPreferences, Chat
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'}
@@ -256,6 +253,10 @@ def index():
 
 @app.route('/pre-login', methods=['GET', 'POST'])
 def pre_login():
+    # Only allow access if coming from registration
+    if 'registration_data' not in session:
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         # Store preferences in session
         preferences = {
@@ -266,16 +267,52 @@ def pre_login():
             'frequency': request.form.get('frequency'),
             'dietary': request.form.getlist('dietary')
         }
-        session['preferences'] = preferences
-        return redirect(url_for('login'))
+        
+        try:
+            # Get registration data
+            reg_data = session['registration_data']
+            
+            # Create user in Firestore
+            user_data = {
+                'name': reg_data['name'],
+                'email': reg_data['email'],
+                'password_hash': generate_password_hash(reg_data['password'], method='scrypt'),
+                'created_at': datetime.now(),
+                'role': 'customer'  # Default role
+            }
+            
+            # Add user to Firestore
+            users_ref = db.collection('users')
+            user_ref = users_ref.document()
+            user_ref.set(user_data)
+            
+            # Create User object and log in
+            user = User(
+                id=user_ref.id,
+                email=reg_data['email'],
+                name=reg_data['name'],
+                role='customer'
+            )
+            login_user(user)
+            
+            # Store preferences
+            UserPreferences.create_or_update(user_ref.id, preferences)
+            
+            # Clear session data
+            session.pop('registration_data', None)
+            
+            flash('Account created successfully!', 'success')
+            return redirect(url_for('customer_dashboard'))
+            
+        except Exception as e:
+            print(f"Registration error: {str(e)}")
+            flash('Error creating account. Please try again.', 'danger')
+            return redirect(url_for('login'))
+            
     return render_template('pre_login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Redirect to pre-login if no preferences are stored
-    if 'preferences' not in session and request.method == 'GET':
-        return redirect(url_for('pre_login'))
-
     if current_user.is_authenticated:
         if current_user.is_admin:
             return redirect(url_for('admin_dashboard'))
@@ -315,12 +352,6 @@ def login():
                         role=user_found.get('role', 'customer')
                     )
                     login_user(user)
-
-                    # Store preferences in database if they exist
-                    if 'preferences' in session:
-                        UserPreferences.create_or_update(user_found['id'], session['preferences'])
-                        session.pop('preferences', None)
-
             flash('Welcome back!', 'success')
             
             # Redirect based on role
@@ -1232,75 +1263,231 @@ def admin_delete_proof(order_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-SYSTEM_PROMPT = """You are a helpful assistant for Sweet Bakery, a cake shop. 
-You help customers with inquiries about our products, services, and policies.
-Our specialties include custom cakes, cupcakes, and pastries.
-We offer delivery within the city and special orders for events.
-Be friendly, professional, and always aim to provide accurate information about our services.
-If you're not sure about specific details, encourage the customer to contact us directly.
-"""
+# System prompt for the chatbot
+SYSTEM_PROMPT = """You are a knowledgeable and friendly bakery assistant for Sweet Bakery. Your role is to help customers with their bakery-related inquiries and provide detailed, helpful responses.
 
-@app.route('/chat', methods=['GET', 'POST'])
-def chat():
-    if request.method == 'GET':
-        return render_template('chat.html')
-        
+Key Information:
+1. Products:
+   - Custom cakes (birthday, wedding, special occasions)
+   - Cupcakes and pastries
+   - Price range: 300-3000 PHP depending on size and design
+
+2. Services:
+   - Custom cake design and decoration
+   - Special orders for events
+   - Delivery within the city
+   - 3-5 days advance notice required for custom orders
+
+3. Policies:
+   - Operating hours: 9 AM - 6 PM, Monday to Saturday
+   - Payment methods: Bank transfer or cash
+   - Delivery available within city limits
+   - Free consultation for custom designs
+
+4. Specialties:
+   - Birthday cakes with custom themes
+   - Wedding cakes (2-7 tiers)
+   - Character cakes for children
+   - Photo-printed cakes
+   - Dietary options (gluten-free, sugar-free, vegan)
+
+When responding:
+- Be warm and friendly while maintaining professionalism
+- Provide specific details about products and services
+- If asked about prices, give ranges and explain factors affecting cost
+- For custom orders, ask about preferences (size, flavor, design, occasion)
+- If unsure about specific details, suggest contacting the store directly
+- Offer relevant suggestions based on customer inquiries"""
+
+# Initialize OpenAI client with better error handling
+try:
+    api_key = os.getenv('OPENAI_API_KEY')
+    print("\nOpenAI API Key Debug:")
+    print(f"API Key exists: {bool(api_key)}")
+    print(f"API Key length: {len(api_key) if api_key else 0}")
+    
+    if not api_key:
+        raise ValueError("OpenAI API key is not set in environment variables")
+    
+    # Clean the API key
+    api_key = api_key.strip()  # Remove whitespace
+    api_key = api_key.strip('"\'')  # Remove quotes
+    
+    # Validate API key format
+    if not api_key.startswith(('sk-', 'sk-org-')):
+        raise ValueError(f"Invalid OpenAI API key format. Must start with 'sk-' or 'sk-org-'. Key starts with: {api_key[:5]}")
+    
+    print(f"API Key validation passed. Key starts with: {api_key[:7]}...")
+    
+    client = OpenAI(
+        api_key=api_key,
+        timeout=30.0,
+        max_retries=2
+    )
+    
+    # Test the client with a simple completion
+    print("Testing OpenAI client with a simple request...")
+    test_response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": "Hello"}],
+        max_tokens=5
+    )
+    print("OpenAI client test successful!")
+    print(f"Test response received: {test_response.choices[0].message.content}")
+    
+except ValueError as ve:
+    print(f"OpenAI API Key Error: {str(ve)}")
+    client = None
+except Exception as e:
+    print(f"OpenAI Client Error: {str(e)}")
+    print("Full error details:")
+    import traceback
+    traceback.print_exc()
+    client = None
+
+@app.route('/chat', methods=['GET'])
+@login_required
+def chat_interface():
+    return render_template('chat.html')
+
+@app.route('/chat/send', methods=['POST'])
+@login_required
+def chat_with_ai():
+    print("\n=== Starting chat request ===")
+    
+    if not client:
+        error_msg = "OpenAI client is not initialized. Please check your OPENAI_API_KEY in .env file."
+        print(f"Error: {error_msg}")
+        return jsonify({
+            'error': error_msg,
+            'details': 'Make sure your .env file contains a valid OpenAI API key starting with sk-'
+        }), 500
+
     try:
         data = request.get_json()
-        if not data or 'message' not in data:
-            return jsonify({'error': 'No message provided'}), 400
-            
-        message = data['message']
+        user_message = data.get('message', '').strip()
         
-        # Get chat history from session
-        chat_history = session.get('chat_history', [])
+        print(f"Processing message: {user_message}")
         
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+
+        # Get user preferences and recent orders for context
+        user_context = get_conversation_context(current_user.id, user_message)
+        
+        # Get recent chat history (last 3 messages)
+        chat_history = session.get('chat_history', [])[-3:]
+        history_messages = []
+        for msg in chat_history:
+            history_messages.append({
+                "role": "user" if msg['sender'] == 'user' else "assistant",
+                "content": msg['message']
+            })
+
         # Prepare messages for OpenAI
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT}
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *history_messages,
+            {"role": "user", "content": user_message}
         ]
         
-        # Add chat history
-        for chat in chat_history[-5:]:  # Only use last 5 messages for context
-            messages.append({"role": "user", "content": chat['user']})
-            messages.append({"role": "assistant", "content": chat['bot']})
+        print("Sending request to OpenAI API...")
+        
+        try:
+            completion = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=500,
+                top_p=0.9,
+                frequency_penalty=0.5,
+                presence_penalty=0.5
+            )
             
-        # Add current message
-        messages.append({"role": "user", "content": message})
-        
-        print("Sending request to OpenAI...")  # Debug log
-        
-        # Get response from OpenAI using older API
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=500,
-            temperature=0.7,
-            top_p=0.9
-        )
-        
-        print("Received response from OpenAI")  # Debug log
-        
-        bot_response = response.choices[0].message['content']
-        
-        # Update chat history
-        chat_history.append({
-            'user': message,
-            'bot': bot_response
-        })
-        session['chat_history'] = chat_history
-        
-        # Save interaction to Firebase
-        user_id = current_user.id if current_user.is_authenticated else 'anonymous'
-        Chat.save_interaction(user_id, message, bot_response)
-        
-        return jsonify({'response': bot_response})
-        
+            ai_message = completion.choices[0].message.content.strip()
+            print(f"Received response: {ai_message[:100]}...")
+            
+            if not ai_message:
+                raise ValueError("Empty response from OpenAI")
+            
+            # Update chat history
+            current_time = datetime.now().isoformat()
+            new_messages = [
+                {'sender': 'user', 'message': user_message, 'timestamp': current_time},
+                {'sender': 'assistant', 'message': ai_message, 'timestamp': current_time}
+            ]
+            
+            # Store in session
+            chat_history = session.get('chat_history', [])
+            chat_history.extend(new_messages)
+            session['chat_history'] = chat_history[-10:]  # Keep last 10 messages
+            
+            # Store in database
+            try:
+                Chat.create({
+                    'user_id': current_user.id,
+                    'user_message': user_message,
+                    'ai_response': ai_message,
+                    'timestamp': datetime.now(),
+                    'resolved': False
+                })
+            except Exception as db_error:
+                print(f"Database error (non-critical): {str(db_error)}")
+            
+            return jsonify({
+                'response': ai_message,
+                'history': chat_history
+            })
+            
+        except Exception as api_error:
+            error_msg = str(api_error)
+            print(f"OpenAI API Error: {error_msg}")
+            print("Full error details:")
+            traceback.print_exc()
+            
+            if "api_key" in error_msg.lower() or "authentication" in error_msg.lower():
+                return jsonify({
+                    'error': 'OpenAI authentication failed',
+                    'details': 'Please check your API key in the .env file'
+                }), 401
+            
+            return jsonify({
+                'error': 'Failed to get AI response',
+                'details': str(api_error)
+            }), 500
+            
     except Exception as e:
-        print(f"Chat error: {e}")  # Debug log
-        import traceback
-        traceback.print_exc()  # Print full error traceback
-        return jsonify({'error': str(e)}), 500
+        print(f"General chat error: {str(e)}")
+        print("Full error details:")
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Failed to process request',
+            'details': str(e)
+        }), 500
+
+@app.route('/chat/history', methods=['GET'])
+@login_required
+def get_chat_history():
+    try:
+        # Try to get history from database first
+        history = Chat.get_user_history(current_user.id)
+        if not history:
+            # Fall back to session history if no database history
+            history = session.get('chat_history', [])
+        return jsonify({'history': history})
+    except Exception as e:
+        print(f"Error getting chat history: {str(e)}")
+        return jsonify({'error': 'Failed to get chat history'}), 500
+
+@app.route('/chat/clear', methods=['POST'])
+@login_required
+def clear_chat():
+    try:
+        session.pop('chat_history', None)
+        return jsonify({'message': 'Chat history cleared'})
+    except Exception as e:
+        print(f"Error clearing chat: {str(e)}")
+        return jsonify({'error': 'Failed to clear chat'}), 500
 
 @app.route('/admin/chat-interactions')
 @login_required
@@ -1317,7 +1504,7 @@ def resolve_chat(interaction_id):
         return jsonify({'success': True})
     return jsonify({'error': 'Failed to mark as resolved'}), 500
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -1332,35 +1519,13 @@ def register():
                 flash('An account with this email already exists.', 'danger')
                 return redirect(url_for('login'))
             
-            # Create user in Firestore
-            user_data = {
-                'name': name,
+            # Redirect to pre-login to collect preferences
+            session['registration_data'] = {
                 'email': email,
-                'password_hash': generate_password_hash(password, method='scrypt'),
-                'created_at': datetime.now(),
-                'role': 'customer'  # Default role
+                'password': password,
+                'name': name
             }
-            
-            # Add user to Firestore
-            user_ref = users_ref.document()
-            user_ref.set(user_data)
-            
-            # Create User object and log in
-            user = User(
-                id=user_ref.id,
-                email=email,
-                name=name,
-                role='customer'
-            )
-            login_user(user)
-            
-            # Store preferences if they exist
-            if 'preferences' in session:
-                UserPreferences.create_or_update(user_ref.id, session['preferences'])
-                session.pop('preferences', None)
-            
-            flash('Account created successfully!', 'success')
-            return redirect(url_for('customer_dashboard'))
+            return redirect(url_for('pre_login'))
             
         except Exception as e:
             print(f"Registration error: {str(e)}")
@@ -1771,21 +1936,96 @@ def refresh_insights():
 
 def generate_ai_insights(orders, products):
     try:
-        prompt = f"Based on the following order data, provide insights about sales trends and customer preferences..."
+        # Prepare data for analysis
+        total_orders = len(orders)
+        total_revenue = sum(order.get('total', 0) for order in orders)
         
-        response = openai.ChatCompletion.create(
+        # Get recent trends
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        recent_orders = []
+        
+        for order in orders:
+            created_at = order.get('created_at')
+            # Convert string dates to datetime
+            if isinstance(created_at, str):
+                try:
+                    created_at = datetime.fromisoformat(created_at)
+                except ValueError:
+                    continue
+            if created_at and created_at >= thirty_days_ago:
+                order['created_at'] = created_at
+                recent_orders.append(order)
+        
+        # Analyze product performance
+        product_performance = {}
+        for order in recent_orders:
+            items = order.get('items', [])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict):
+                        product_id = item.get('product_id')
+                        if product_id:
+                            product_performance[product_id] = product_performance.get(product_id, 0) + 1
+        
+        # Get top and bottom performing products
+        sorted_products = sorted(product_performance.items(), key=lambda x: x[1], reverse=True)
+        top_products = sorted_products[:3] if sorted_products else []
+        bottom_products = sorted_products[-3:] if len(sorted_products) >= 3 else []
+        
+        # Get product names
+        product_names = {str(p.get('id')): p.get('name', 'Unknown') for p in products}
+        
+        # Format product performance strings
+        top_products_str = ', '.join(
+            f"{product_names.get(str(pid), 'Unknown')} ({count} orders)" 
+            for pid, count in top_products
+        ) or "No data available"
+        
+        bottom_products_str = ', '.join(
+            f"{product_names.get(str(pid), 'Unknown')} ({count} orders)" 
+            for pid, count in bottom_products
+        ) or "No data available"
+        
+        # Prepare prompt for OpenAI
+        prompt = f"""
+        Based on the following bakery data, provide 3-4 key business insights and recommendations:
+        
+        Recent Performance:
+        - Total orders in last 30 days: {len(recent_orders)}
+        - Average order value: R{total_revenue/max(total_orders, 1):.2f}
+        
+        Top Performing Products:
+        {top_products_str}
+        
+        Areas for Improvement:
+        {bottom_products_str}
+        
+        Provide actionable insights focusing on:
+        1. Sales trends and opportunities
+        2. Inventory optimization
+        3. Customer behavior patterns
+        4. Specific recommendations for improvement
+        
+        Format the response in HTML with bullet points.
+        """
+        
+        # Get insights from OpenAI
+        client = OpenAI()
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a data analyst for a cake shop."},
+                {"role": "system", "content": "You are a business analytics expert specializing in bakery operations."},
                 {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=500
+            ]
         )
         
-        return response.choices[0].message['content']
+        insights = response.choices[0].message.content
+        
+        return insights
+        
     except Exception as e:
-        return f"Error generating insights: {str(e)}"
+        print(f"Error generating AI insights: {e}")
+        return "<p class='text-danger'>Error generating insights. Please try again later.</p>"
 
 def check_order_feasibility(product_name, quantity):
     """Check if an order is feasible based on ingredients and capacity"""
@@ -1883,8 +2123,9 @@ def ai_assistant():
     try:
         message = request.json.get('message', '')
         
-        # Use OpenAI with older syntax
-        response = openai.ChatCompletion.create(
+        # Use OpenAI to understand the request
+        client = OpenAI()
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": """You are a bakery assistant. Extract the product name and quantity from the user's message.
@@ -1897,7 +2138,7 @@ def ai_assistant():
         # Parse the AI response
         try:
             import json
-            ai_response = json.loads(response.choices[0].message['content'])
+            ai_response = json.loads(response.choices[0].message.content)
             product_name = ai_response.get('product_name')
             quantity = ai_response.get('quantity')
             
@@ -2152,22 +2393,113 @@ def check_upcoming_birthdays():
             except Exception as e:
                 print(f"Error resetting email flag for {birthday_data['email']}: {str(e)}")
 
-@app.route('/chat', methods=['POST'])
-def chat_with_ai():
+@app.route('/api/suggested-products', methods=['POST'])
+def suggested_products():
     try:
-        user_message = request.json.get('message', '')
+        data = request.get_json()
+        current_items = data.get('current_items', [])
         
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_message}
-            ],
-            temperature=0.7,
-            max_tokens=150
-        )
+        # Get all products
+        all_products = Product.get_all()
         
-        ai_response = response.choices[0].message['content']
-        return jsonify({"response": ai_response})
+        # Filter out products already in cart
+        available_products = [p for p in all_products if p['id'] not in current_items]
+        
+        # Randomly select up to 3 products
+        num_suggestions = min(3, len(available_products))
+        suggested_products = random.sample(available_products, num_suggestions)
+        
+        return jsonify(suggested_products)
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error getting suggested products: {e}")
+        return jsonify([]), 500
+
+# Chat-related functions
+def get_order_status(order_id):
+    """Get the status of an order"""
+    try:
+        order = Order.get_by_id(order_id)
+        if order:
+            return {
+                "status": order.status,
+                "delivery_date": order.delivery_date.isoformat() if order.delivery_date else None,
+                "total": order.total
+            }
+        return None
+    except Exception as e:
+        print(f"Error getting order status: {e}")
+        return None
+
+def get_product_info(product_name):
+    """Get information about a product"""
+    try:
+        products = Product.search_by_name(product_name)
+        if products:
+            return [{
+                "name": p.name,
+                "price": p.price,
+                "description": p.description,
+                "available": p.is_available
+            } for p in products]
+        return None
+    except Exception as e:
+        print(f"Error getting product info: {e}")
+        return None
+
+# OpenAI function definitions
+CHAT_FUNCTIONS = [
+    {
+        "name": "get_order_status",
+        "description": "Get the current status of an order",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string",
+                    "description": "The ID of the order to look up"
+                }
+            },
+            "required": ["order_id"]
+        }
+    },
+    {
+        "name": "get_product_info",
+        "description": "Get information about a product",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "product_name": {
+                    "type": "string",
+                    "description": "The name of the product to look up"
+                }
+            },
+            "required": ["product_name"]
+        }
+    }
+]
+
+def count_tokens(messages):
+    """Estimate token count for messages"""
+    # Rough estimation: 4 chars = 1 token
+    total_chars = sum(len(str(msg)) for msg in messages)
+    return total_chars // 4
+
+def get_conversation_context(user_id, current_message):
+    """Get relevant conversation context"""
+    try:
+        # Get user preferences
+        prefs = UserPreferences.get_preferences(user_id)
+        
+        # Get recent order history
+        recent_orders = Order.get_recent_by_user(user_id, limit=3)
+        
+        # Build context message
+        context = f"User Preferences: {json.dumps(prefs)}\n"
+        if recent_orders:
+            context += f"Recent Orders: {json.dumps(recent_orders)}\n"
+        
+        return context
+    except Exception as e:
+        print(f"Error getting conversation context: {e}")
+        return ""

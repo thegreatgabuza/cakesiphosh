@@ -151,6 +151,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Check URL parameters for tab selection
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'register') {
+        const registerTab = document.getElementById('register-tab');
+        if (registerTab) {
+            registerTab.click();
+        }
+    }
+
     // Form validation
     const forms = document.querySelectorAll('.needs-validation');
     

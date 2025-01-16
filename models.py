@@ -5,6 +5,7 @@ from flask_login import UserMixin
 from google.cloud import firestore
 import firebase_admin
 from firebase_admin import auth
+import pytz
 
 class Order:
     def __init__(self, id=None, customer_id=None, items=None, total=0, 
@@ -465,9 +466,9 @@ class ProductIngredient:
     def delete(product_id, ingredient_id):
         try:
             docs = db.collection('product_ingredients')\
-                    .where('product_id', '==', product_id)\
-                    .where('ingredient_id', '==', ingredient_id)\
-                    .stream()
+                .where('product_id', '==', product_id)\
+                .where('ingredient_id', '==', ingredient_id)\
+                .stream()
             for doc in docs:
                 doc.reference.delete()
             return True
@@ -479,9 +480,9 @@ class ProductIngredient:
     def update(product_id, ingredient_id, amount):
         try:
             docs = db.collection('product_ingredients')\
-                    .where('product_id', '==', product_id)\
-                    .where('ingredient_id', '==', ingredient_id)\
-                    .stream()
+                .where('product_id', '==', product_id)\
+                .where('ingredient_id', '==', ingredient_id)\
+                .stream()
             for doc in docs:
                 doc.reference.update({'amount': amount})
             return True
@@ -623,59 +624,28 @@ class Cart:
             return False
 
 class User(UserMixin):
-    def __init__(self, id, email, name, role=None):
+    def __init__(self, id, email, name, role='customer'):
         self.id = id
         self.email = email
         self.name = name
         self.role = role
-        self._is_admin = None  # Cache for admin status
-
-    @property
-    def is_authenticated(self):
-        return True
-
-    @property
-    def is_active(self):
-        return True
-
-    @property
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        return str(self.id)
 
     @property
     def is_admin(self):
-        if self._is_admin is None:
-            try:
-                user_doc = db.collection('users').document(self.id).get()
-                if user_doc.exists:
-                    user_data = user_doc.to_dict()
-                    self._is_admin = user_data.get('role') == 'admin'
-                else:
-                    self._is_admin = False
-            except Exception as e:
-                print(f"Error checking admin status: {e}")
-                self._is_admin = False
-        return self._is_admin
+        return self.role == 'admin'
 
     @staticmethod
     def get(user_id):
-        try:
-            user_doc = db.collection('users').document(user_id).get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                return User(
-                    id=user_id,
-                    email=user_data.get('email'),
-                    name=user_data.get('name'),
-                    role=user_data.get('role')
-                )
-            return None
-        except Exception as e:
-            print(f"Error getting user: {e}")
-            return None
+        user_doc = db.collection('users').document(user_id).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            return User(
+                id=user_doc.id,
+                email=user_data.get('email'),
+                name=user_data.get('name', ''),
+                role=user_data.get('role', 'customer')
+            )
+        return None
 
     @staticmethod
     def get_by_email(email):
@@ -931,27 +901,55 @@ class UserPreferences:
 
 class Chat:
     @staticmethod
-    def save_interaction(user_id, message, response):
+    def create(data):
         try:
-            chat_data = {
-                'user_id': user_id,
-                'message': message,
-                'response': response,
-                'timestamp': datetime.now(),
-                'is_resolved': False
-            }
-            
+            # Add timestamp if not present
+            if 'timestamp' not in data:
+                data['timestamp'] = datetime.now()
+                
             # Store in Firestore
-            db.collection('chat_interactions').add(chat_data)
-            return True
+            doc_ref = db.collection('chat_interactions').document()
+            doc_ref.set(data)
+            return doc_ref.id
         except Exception as e:
-            print(f"Error saving chat interaction: {e}")
-            return False
-    
+            print(f"Error creating chat interaction: {e}")
+            raise
+
+    @staticmethod
+    def get_user_history(user_id, limit=10):
+        try:
+            interactions = db.collection('chat_interactions')\
+                .where('user_id', '==', user_id)\
+                .order_by('timestamp', direction=firestore.Query.DESCENDING)\
+                .limit(limit)\
+                .stream()
+            
+            history = []
+            for doc in interactions:
+                data = doc.to_dict()
+                history.extend([
+                    {
+                        'sender': 'user',
+                        'message': data.get('user_message', ''),
+                        'timestamp': data.get('timestamp').isoformat()
+                    },
+                    {
+                        'sender': 'assistant',
+                        'message': data.get('ai_response', ''),
+                        'timestamp': data.get('timestamp').isoformat()
+                    }
+                ])
+            return history
+        except Exception as e:
+            print(f"Error getting user chat history: {e}")
+            return []
+
     @staticmethod
     def get_all_interactions():
         try:
-            interactions = db.collection('chat_interactions').order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+            interactions = db.collection('chat_interactions')\
+                .order_by('timestamp', direction=firestore.Query.DESCENDING)\
+                .stream()
             return [{'id': doc.id, **doc.to_dict()} for doc in interactions]
         except Exception as e:
             print(f"Error getting chat interactions: {e}")
@@ -961,7 +959,7 @@ class Chat:
     def mark_as_resolved(interaction_id):
         try:
             db.collection('chat_interactions').document(interaction_id).update({
-                'is_resolved': True,
+                'resolved': True,
                 'resolved_at': datetime.now()
             })
             return True

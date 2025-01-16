@@ -11,81 +11,81 @@
 
     {% if orders %}
     <div class="row">
-        {% for order in orders %}
+    {% for order in orders %}
         <div class="col-12 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
                     <div>
-                        <h5 class="mb-0">Order #{{ order.id }}</h5>
+            <h5 class="mb-0">Order #{{ order.id }}</h5>
                         <small class="text-muted">Placed on {{ order.created_at }}</small>
                     </div>
                     <span class="badge bg-{{ order.status_color }} fs-6">{{ order.status|title }}</span>
-                </div>
-                <div class="card-body">
+        </div>
+        <div class="card-body">
                     <div class="row g-3">
                         <!-- Order Details -->
-                        <div class="col-md-6">
+                <div class="col-md-6">
                             <div class="mb-3">
                                 <h6 class="text-muted mb-2">Order Details</h6>
                                 <p class="mb-1"><strong>Total Amount:</strong> R{{ "%.2f"|format(order.total) }}</p>
                                 <p class="mb-1">
                                     <strong>Payment Status:</strong> 
-                                    <span class="badge bg-{{ order.payment_status_color }}">
-                                        {{ order.payment_status|title }}
-                                    </span>
-                                </p>
+                        <span class="badge bg-{{ order.payment_status_color }}">
+                            {{ order.payment_status|title }}
+                        </span>
+                    </p>
                                 {% if order.delivery_method %}
                                 <p class="mb-1"><strong>Delivery Method:</strong> {{ order.delivery_method|title }}</p>
                                 {% endif %}
                             </div>
-                        </div>
+                </div>
 
                         <!-- Actions -->
-                        <div class="col-md-6">
+                <div class="col-md-6">
                             <div class="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
                                 <button class="btn btn-outline-primary" 
-                                        data-order='{{ order|tojson|safe }}'
-                                        onclick="viewItems(this.dataset.order)">
-                                    <i class="bi bi-eye"></i> View Items
-                                </button>
-                                {% if order.status == 'pending' %}
+                                data-order='{{ order|tojson|safe }}'
+                                onclick="viewItems(this.dataset.order)">
+                            <i class="bi bi-eye"></i> View Items
+                        </button>
+                        {% if order.status == 'pending' %}
                                 <button class="btn btn-outline-danger" 
-                                        onclick="cancelOrder('{{ order.id }}')">
+                                onclick="cancelOrder('{{ order.id }}')">
                                     <i class="bi bi-x-circle"></i> Cancel Order
-                                </button>
-                                {% endif %}
-                            </div>
-                        </div>
+                        </button>
+                        {% endif %}
+                </div>
+            </div>
 
-                        <!-- Payment Proof Section -->
-                        {% if order.payment_status == 'pending' %}
+            <!-- Payment Proof Section -->
+                {% if order.payment_status == 'pending' %}
                         <div class="col-12">
                             <div class="alert alert-info">
                                 <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Payment Required</h6>
                                 <p class="mb-0">Please upload your proof of payment to process your order.</p>
                             </div>
-                            <form class="payment-proof-form" onsubmit="uploadPaymentProof(event, '{{ order.id }}')">
-                                <div class="input-group">
-                                    <input type="file" class="form-control" name="payment_proof" 
+                    <form class="payment-proof-form" onsubmit="uploadPaymentProof(event, '{{ order.id }}')">
+                        <div class="input-group">
+                            <input type="file" class="form-control" name="payment_proof" 
                                            accept="image/*,.pdf" required>
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="bi bi-upload"></i> Upload Proof
-                                    </button>
-                                </div>
-                                <small class="text-muted">Accepted formats: Images (JPG, PNG) and PDF</small>
-                            </form>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-upload"></i> Upload Proof
+                            </button>
                         </div>
-                        {% elif order.proof_of_payment_url %}
+                                <small class="text-muted">Accepted formats: Images (JPG, PNG) and PDF</small>
+                    </form>
+                        </div>
+                {% elif order.proof_of_payment_url %}
                         <div class="col-12">
                             <div class="card bg-light">
                                 <div class="card-body">
                                     <h6 class="card-title">Payment Proof</h6>
                                     <div class="d-flex align-items-center gap-3">
-                                        <img src="{{ order.proof_of_payment_url }}" 
-                                             alt="Payment Proof" 
+                                <img src="{{ order.proof_of_payment_url }}" 
+                                     alt="Payment Proof" 
                                              style="max-width: 150px; max-height: 150px;"
                                              class="img-thumbnail cursor-pointer"
-                                             onclick="viewFullImage(this.src)">
+                                     onclick="viewFullImage(this.src)">
                                         <div>
                                             <p class="mb-1">
                                                 <strong>Status:</strong>
@@ -106,7 +106,7 @@
                         </div>
                         {% endif %}
                     </div>
-                </div>
+                        </div>
             </div>
         </div>
         {% endfor %}
@@ -153,6 +153,37 @@
         </div>
     </div>
 </div>
+
+<!-- Order Summary -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-gift text-primary me-2"></i>
+            You Might Also Like
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3" id="suggested-products">
+            <!-- Suggested products will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Payment Method -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-credit-card text-primary me-2"></i>
+            Payment Method
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3" id="suggested-products">
+            <!-- Suggested products will be loaded here -->
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -170,15 +201,15 @@ function viewItems(orderData) {
     let itemsHtml = `
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Item</th>
+            <thead>
+                <tr>
+                    <th>Item</th>
                         <th class="text-end">Price</th>
                         <th class="text-center">Quantity</th>
                         <th class="text-end">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
+                </tr>
+            </thead>
+            <tbody>
     `;
     
     order.items.forEach(item => {
@@ -209,12 +240,12 @@ function viewItems(orderData) {
                         <td colspan="3" class="text-end"><strong>Tax (15%):</strong></td>
                         <td class="text-end">R${(order.total * 0.15).toFixed(2)}</td>
                     </tr>
-                    <tr>
+                <tr>
                         <td colspan="3" class="text-end"><strong>Total:</strong></td>
                         <td class="text-end"><strong>R${(order.total * 1.15).toFixed(2)}</strong></td>
-                    </tr>
-                </tfoot>
-            </table>
+                </tr>
+            </tfoot>
+        </table>
         </div>
     `;
     
@@ -278,7 +309,7 @@ function uploadPaymentProof(event, orderId) {
     reader.readAsDataURL(file);
     reader.onload = () => {
         fetch(`/orders/${orderId}/upload-proof`, {
-            method: 'POST',
+        method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -287,22 +318,22 @@ function uploadPaymentProof(event, orderId) {
                 file_type: file.type,
                 file_name: file.name
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
                 showToast('Success', 'Payment proof uploaded successfully');
                 setTimeout(() => location.reload(), 1500);
-            } else {
+        } else {
                 throw new Error(data.error || 'Error uploading payment proof');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
             showToast('Error', error.message || 'Error uploading payment proof', 'error');
-            submitButton.disabled = false;
+        submitButton.disabled = false;
             submitButton.innerHTML = '<i class="bi bi-upload"></i> Upload Proof';
-        });
+    });
     };
 }
 
@@ -343,6 +374,78 @@ function createToastContainer() {
     document.body.appendChild(container);
     return container;
 }
+
+// Function to load suggested products
+async function loadSuggestedProducts() {
+    try {
+        const response = await fetch('/api/suggested-products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_items: Array.from(document.querySelectorAll('[data-product-id]')).map(el => el.dataset.productId)
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to load suggestions');
+        
+        const products = await response.json();
+        const container = document.getElementById('suggested-products');
+        
+        products.forEach(product => {
+            const card = document.createElement('div');
+            card.className = 'col-md-4';
+            card.innerHTML = `
+                <div class="card h-100 border-0 shadow-sm">
+                    <img src="${product.image || '/static/images/placeholder.jpg'}" class="card-img-top" alt="${product.name}">
+                    <div class="card-body">
+                        <h6 class="card-title">${product.name}</h6>
+                        <p class="card-text text-muted small">${product.description || ''}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-primary fw-bold">$${product.price}</span>
+                            <button class="btn btn-outline-primary btn-sm" onclick="addToCart('${product.id}')">
+                                <i class="bi bi-plus-circle me-1"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+    }
+}
+
+// Function to add suggested product to cart
+async function addToCart(productId) {
+    try {
+        const response = await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to add to cart');
+        
+        // Refresh the page to show updated cart
+        window.location.reload();
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        showToast('error', 'Failed to add product to cart');
+    }
+}
+
+// Load suggested products when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadSuggestedProducts();
+});
 </script>
 
 <style>

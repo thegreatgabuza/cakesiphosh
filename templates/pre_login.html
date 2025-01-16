@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Tell Us About Yourself - Cake Siphosh{% endblock %}
+{% block title %}Complete Your Registration - Cake Siphosh{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -10,8 +10,8 @@
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-5">
                         <i class="bi bi-cake2 display-1 text-primary mb-3"></i>
-                        <h2 class="card-title fw-bold">Help Us Personalize Your Experience</h2>
-                        <p class="text-muted">Tell us about your preferences so we can recommend the perfect cakes for you!</p>
+                        <h2 class="card-title fw-bold">Complete Your Registration</h2>
+                        <p class="text-muted">Tell us about your preferences so we can personalize your experience!</p>
                     </div>
                     
                     <form action="{{ url_for('pre_login') }}" method="POST" class="needs-validation" novalidate>
@@ -72,6 +72,14 @@
                                         </div>
                                     </label>
                                 </div>
+                                <!-- Custom age option -->
+                                <div class="col-12 mt-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="age_group" id="custom_age" value="custom">
+                                        <label class="form-check-label" for="custom_age">Other (specify)</label>
+                                    </div>
+                                    <input type="text" class="form-control mt-2" id="custom_age_input" placeholder="Enter your age group" disabled>
+                                </div>
                             </div>
                         </div>
 
@@ -82,6 +90,7 @@
                                 Occasions
                             </h4>
                             <div class="row g-3">
+                                <!-- Predefined occasions -->
                                 <div class="col-md-6">
                                     <div class="form-check custom-checkbox">
                                         <input class="form-check-input" type="checkbox" name="occasions" value="birthdays" id="birthdays">
@@ -118,6 +127,18 @@
                                         </label>
                                     </div>
                                 </div>
+                                <!-- Custom occasions input -->
+                                <div class="col-12 mt-3">
+                                    <hr>
+                                    <p class="text-muted mb-2">Add your own occasions:</p>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="occasion_input" placeholder="Type an occasion and press Enter">
+                                        <button class="btn btn-outline-primary" type="button" id="add_occasion">
+                                            <i class="bi bi-plus-lg"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="occasions_container" class="mt-2"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -128,6 +149,7 @@
                                 Favorite Flavors
                             </h4>
                             <div class="row g-3">
+                                <!-- Predefined flavors -->
                                 <div class="col-md-6">
                                     <div class="flavor-card">
                                         <input class="btn-check" type="checkbox" name="flavors" value="chocolate" id="chocolate">
@@ -164,110 +186,105 @@
                                         </label>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Price Range -->
-                        <div class="form-section mb-4" data-section="4">
-                            <h4 class="mb-3 d-flex align-items-center">
-                                <i class="bi bi-tags me-2"></i>
-                                Price Range
-                            </h4>
-                            <div class="price-range-slider mb-3">
-                                <input type="range" class="form-range" id="priceRangeSlider" min="1" max="4" step="1">
-                                <input type="hidden" name="price_range" id="priceRangeInput" required>
-                                <div class="price-labels d-flex justify-content-between">
-                                    <span>Budget</span>
-                                    <span>Mid-range</span>
-                                    <span>Premium</span>
-                                    <span>Luxury</span>
+                                <!-- Custom flavors input -->
+                                <div class="col-12 mt-3">
+                                    <hr>
+                                    <p class="text-muted mb-2">Add your own flavors:</p>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="flavor_input" placeholder="Type a flavor and press Enter">
+                                        <button class="btn btn-outline-primary" type="button" id="add_flavor">
+                                            <i class="bi bi-plus-lg"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="flavors_container" class="mt-2"></div>
                                 </div>
                             </div>
-                            <div class="price-display text-center mb-3">
-                                <span class="badge bg-primary px-3 py-2" id="selectedPriceRange">Select a price range</span>
-                            </div>
                         </div>
 
-                        <!-- Purchase Frequency -->
+                        <!-- Dietary Requirements -->
                         <div class="form-section mb-4" data-section="5">
                             <h4 class="mb-3 d-flex align-items-center">
-                                <i class="bi bi-clock-history me-2"></i>
-                                Purchase Frequency
-                            </h4>
-                            <div class="frequency-buttons">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <input type="radio" class="btn-check" name="frequency" id="rarely" value="rarely" required>
-                                        <label class="btn btn-outline-primary w-100" for="rarely">
-                                            <i class="bi bi-calendar-x me-2"></i>
-                                            Rarely
-                                            <small class="d-block text-muted">Once a year or less</small>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="radio" class="btn-check" name="frequency" id="occasionally" value="occasionally">
-                                        <label class="btn btn-outline-primary w-100" for="occasionally">
-                                            <i class="bi bi-calendar-minus me-2"></i>
-                                            Occasionally
-                                            <small class="d-block text-muted">Few times a year</small>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="radio" class="btn-check" name="frequency" id="regularly" value="regularly">
-                                        <label class="btn btn-outline-primary w-100" for="regularly">
-                                            <i class="bi bi-calendar-check me-2"></i>
-                                            Regularly
-                                            <small class="d-block text-muted">Monthly</small>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="radio" class="btn-check" name="frequency" id="frequently" value="frequently">
-                                        <label class="btn btn-outline-primary w-100" for="frequently">
-                                            <i class="bi bi-calendar-plus me-2"></i>
-                                            Frequently
-                                            <small class="d-block text-muted">Multiple times a month</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Dietary Preferences -->
-                        <div class="form-section mb-4" data-section="6">
-                            <h4 class="mb-3 d-flex align-items-center">
                                 <i class="bi bi-shield-check me-2"></i>
-                                Dietary Preferences
+                                Dietary Requirements
                             </h4>
-                            <div class="dietary-options">
-                                <div class="special-checkbox mb-3">
-                                    <input class="btn-check" type="checkbox" name="dietary" value="none" id="none">
-                                    <label class="btn btn-outline-success w-100" for="none">
-                                        <i class="bi bi-check-circle me-2"></i>
-                                        No specific requirements
-                                    </label>
+                            <div class="row g-3">
+                                <!-- None option -->
+                                <div class="col-12 mb-2">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input" type="checkbox" name="dietary" value="none" id="none">
+                                        <label class="form-check-label d-flex align-items-center" for="none">
+                                            <i class="bi bi-check-circle-fill me-2 text-success"></i>
+                                            No dietary requirements
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <input class="btn-check" type="checkbox" name="dietary" value="vegetarian" id="vegetarian">
-                                        <label class="btn btn-outline-primary w-100" for="vegetarian">
+                                <hr>
+                                <!-- Predefined dietary requirements -->
+                                <div class="col-md-6">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input dietary-option" type="checkbox" name="dietary" value="vegetarian" id="vegetarian">
+                                        <label class="form-check-label d-flex align-items-center" for="vegetarian">
                                             <i class="bi bi-flower1 me-2"></i>
                                             Vegetarian
                                         </label>
                                     </div>
-                                    <div class="col-md-4">
-                                        <input class="btn-check" type="checkbox" name="dietary" value="gluten_free" id="gluten_free">
-                                        <label class="btn btn-outline-primary w-100" for="gluten_free">
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input dietary-option" type="checkbox" name="dietary" value="vegan" id="vegan">
+                                        <label class="form-check-label d-flex align-items-center" for="vegan">
+                                            <i class="bi bi-flower2 me-2"></i>
+                                            Vegan
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input dietary-option" type="checkbox" name="dietary" value="gluten_free" id="gluten_free">
+                                        <label class="form-check-label d-flex align-items-center" for="gluten_free">
                                             <i class="bi bi-wheat me-2"></i>
                                             Gluten-free
                                         </label>
                                     </div>
-                                    <div class="col-md-4">
-                                        <input class="btn-check" type="checkbox" name="dietary" value="sugar_free" id="sugar_free">
-                                        <label class="btn btn-outline-primary w-100" for="sugar_free">
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input dietary-option" type="checkbox" name="dietary" value="sugar_free" id="sugar_free">
+                                        <label class="form-check-label d-flex align-items-center" for="sugar_free">
                                             <i class="bi bi-droplet me-2"></i>
                                             Sugar-free
                                         </label>
                                     </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input dietary-option" type="checkbox" name="dietary" value="dairy_free" id="dairy_free">
+                                        <label class="form-check-label d-flex align-items-center" for="dairy_free">
+                                            <i class="bi bi-cup-straw me-2"></i>
+                                            Dairy-free
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check custom-checkbox">
+                                        <input class="form-check-input dietary-option" type="checkbox" name="dietary" value="nut_free" id="nut_free">
+                                        <label class="form-check-label d-flex align-items-center" for="nut_free">
+                                            <i class="bi bi-shield-fill-check me-2"></i>
+                                            Nut-free
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- Custom dietary requirements input -->
+                                <div class="col-12 mt-3">
+                                    <hr>
+                                    <p class="text-muted mb-2">Add other dietary requirements:</p>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="dietary_input" placeholder="Type a dietary requirement and press Enter">
+                                        <button class="btn btn-outline-primary" type="button" id="add_dietary">
+                                            <i class="bi bi-plus-lg"></i> Add
+                                        </button>
+                                    </div>
+                                    <div id="dietary_container" class="mt-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -281,10 +298,29 @@
                                 Next<i class="bi bi-arrow-right ms-2"></i>
                             </button>
                             <button type="submit" class="btn btn-success px-4" id="submitBtn" style="display: none;">
-                                Continue to Login<i class="bi bi-box-arrow-in-right ms-2"></i>
+                                Complete Registration<i class="bi bi-check-circle ms-2"></i>
                             </button>
                         </div>
                     </form>
+
+                    <!-- Loading Animation -->
+                    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                        <div class="loading-content">
+                            <div class="bouncing-items">
+                                <div class="bounce-item cake">🎂</div>
+                                <div class="bounce-item chef">👨‍🍳</div>
+                                <div class="bounce-item cupcake">🧁</div>
+                                <div class="bounce-item pie">🥧</div>
+                            </div>
+                            <div class="loading-text">
+                                <h3 class="mb-3">Creating Your Sweet Experience...</h3>
+                                <div id="loadingMessage" class="text-muted"></div>
+                            </div>
+                            <div class="progress mt-4" style="height: 10px;">
+                                <div id="loadingProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -392,10 +428,112 @@
 .form-section.active {
     animation: fadeIn 0.5s ease forwards;
 }
+
+.selected-tag {
+    display: inline-block;
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    margin: 0.2rem;
+    font-size: 0.9rem;
+}
+
+.selected-tag .remove-tag {
+    cursor: pointer;
+    margin-left: 0.5rem;
+    opacity: 0.7;
+}
+
+.selected-tag .remove-tag:hover {
+    opacity: 1;
+}
+
+.tag-container {
+    min-height: 42px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Loading Animation Styles */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+}
+
+.loading-content {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    max-width: 500px;
+    width: 90%;
+}
+
+.bouncing-items {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.bounce-item {
+    font-size: 3rem;
+    animation: bounce 1s infinite;
+}
+
+.bounce-item.cake { animation-delay: 0s; }
+.bounce-item.chef { animation-delay: 0.2s; }
+.bounce-item.cupcake { animation-delay: 0.4s; }
+.bounce-item.pie { animation-delay: 0.6s; }
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.loading-text {
+    margin: 1.5rem 0;
+}
+
+#loadingMessage {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress {
+    height: 10px !important;
+    border-radius: 10px;
+    background-color: #f0f0f0;
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+    border-radius: 10px;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
     const form = document.querySelector('form');
     const sections = document.querySelectorAll('.form-section');
     const progressBar = document.querySelector('.progress-bar');
@@ -408,49 +546,133 @@ document.addEventListener('DOMContentLoaded', function() {
     showSection(currentSection);
     updateProgressBar();
 
-    // Handle "No specific requirements" checkbox
-    const noDietaryReq = document.getElementById('none');
-    const otherDietaryChecks = document.querySelectorAll('input[name="dietary"]:not(#none)');
+    // Custom Age Group Handling
+    const customAgeRadio = document.getElementById('custom_age');
+    const customAgeInput = document.getElementById('custom_age_input');
     
-    noDietaryReq.addEventListener('change', function() {
-        if (this.checked) {
-            otherDietaryChecks.forEach(check => {
-                check.checked = false;
-                check.disabled = true;
-            });
-        } else {
-            otherDietaryChecks.forEach(check => {
-                check.disabled = false;
-            });
-        }
-    });
-
-    otherDietaryChecks.forEach(check => {
-        check.addEventListener('change', function() {
-            if (this.checked) {
-                noDietaryReq.checked = false;
+    document.querySelectorAll('input[name="age_group"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            customAgeInput.disabled = !customAgeRadio.checked;
+            if (customAgeRadio.checked) {
+                customAgeInput.focus();
             }
         });
     });
 
-    // Handle price range slider
-    const priceRangeSlider = document.getElementById('priceRangeSlider');
-    const priceRangeInput = document.getElementById('priceRangeInput');
-    const selectedPriceRange = document.getElementById('selectedPriceRange');
-    const priceRanges = {
-        1: { text: 'Budget (Under R300)', value: 'budget' },
-        2: { text: 'Mid-range (R300-R500)', value: 'mid' },
-        3: { text: 'Premium (R500-R1000)', value: 'premium' },
-        4: { text: 'Luxury (Above R1000)', value: 'luxury' }
-    };
-
-    priceRangeSlider.addEventListener('input', function() {
-        const range = priceRanges[this.value];
-        selectedPriceRange.textContent = range.text;
-        priceRangeInput.value = range.value;
+    customAgeInput.addEventListener('input', function() {
+        if (customAgeRadio.checked) {
+            customAgeRadio.value = this.value;
+        }
     });
 
-    // Navigation buttons
+    // Function to create a tag element
+    function createTag(text, type) {
+        const tag = document.createElement('span');
+        tag.className = 'selected-tag';
+        tag.innerHTML = `${text}<span class="remove-tag">×</span>`;
+        
+        // Create hidden input for form submission
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `${type}[]`;
+        input.value = text;
+        tag.appendChild(input);
+
+        tag.querySelector('.remove-tag').addEventListener('click', () => {
+            tag.remove();
+        });
+
+        return tag;
+    }
+
+    // Function to handle adding tags
+    function setupTagInput(inputId, addBtnId, containerId, type) {
+        const input = document.getElementById(inputId);
+        const addBtn = document.getElementById(addBtnId);
+        const container = document.getElementById(containerId);
+
+        function addTag() {
+            const text = input.value.trim();
+            if (text) {
+                container.appendChild(createTag(text, type));
+                input.value = '';
+            }
+        }
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag();
+            }
+        });
+
+        addBtn.addEventListener('click', () => {
+            addTag();
+        });
+    }
+
+    // Setup tag inputs for each section
+    setupTagInput('occasion_input', 'add_occasion', 'occasions_container', 'occasions');
+    setupTagInput('flavor_input', 'add_flavor', 'flavors_container', 'flavors');
+    setupTagInput('dietary_input', 'add_dietary', 'dietary_container', 'dietary');
+
+    // Loading animation messages
+    const loadingMessages = [
+        "Preheating the ovens... 🔥",
+        "Gathering the finest ingredients... 🥚",
+        "Mixing your preferences... 🥣",
+        "Adding a sprinkle of magic... ✨",
+        "Preparing your personalized menu... 📋",
+        "Decorating with extra care... 🎨",
+        "Almost ready to serve... 🍽️",
+        "Final touches... ✨"
+    ];
+
+    // Form submission handling
+    form.addEventListener('submit', function(e) {
+        if (!validateSection(currentSection)) {
+            e.preventDefault();
+            showError('Please fill in all required fields before continuing.');
+            return;
+        }
+        
+        if (customAgeRadio.checked && !customAgeInput.value.trim()) {
+            e.preventDefault();
+            customAgeInput.classList.add('is-invalid');
+            return;
+        }
+
+        // Show loading animation
+        e.preventDefault();
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const loadingMessage = document.getElementById('loadingMessage');
+        loadingOverlay.style.display = 'flex';
+
+        let progress = 0;
+        let messageIndex = 0;
+
+        // Update progress and messages
+        const interval = setInterval(() => {
+            progress += 15;
+            if (progress > 100) progress = 100;
+            loadingProgress.style.width = `${progress}%`;
+
+            if (messageIndex < loadingMessages.length) {
+                loadingMessage.textContent = loadingMessages[messageIndex];
+                messageIndex++;
+            }
+
+            if (progress === 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    form.submit();
+                }, 500);
+            }
+        }, 800);
+    });
+
+    // Navigation button event listeners
     prevBtn.addEventListener('click', () => {
         if (currentSection > 0) {
             currentSection--;
@@ -471,12 +693,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Navigation functions
     function showSection(index) {
         sections.forEach((section, i) => {
-            section.classList.remove('active');
-            if (i === index) {
-                section.classList.add('active');
-            }
+            section.classList.toggle('active', i === index);
         });
 
         // Update buttons
@@ -541,12 +761,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form validation before submit
-    form.addEventListener('submit', function(e) {
-        if (!validateSection(currentSection)) {
-            e.preventDefault();
-            showError('Please fill in all required fields before continuing.');
+    // Handle dietary requirements "None" option
+    const noneOption = document.getElementById('none');
+    const dietaryOptions = document.querySelectorAll('.dietary-option');
+    const dietaryInput = document.getElementById('dietary_input');
+    const addDietaryBtn = document.getElementById('add_dietary');
+
+    noneOption.addEventListener('change', function() {
+        if (this.checked) {
+            // Uncheck and disable all other options
+            dietaryOptions.forEach(option => {
+                option.checked = false;
+                option.disabled = true;
+            });
+            // Disable custom input
+            dietaryInput.disabled = true;
+            addDietaryBtn.disabled = true;
+        } else {
+            // Enable all options
+            dietaryOptions.forEach(option => {
+                option.disabled = false;
+            });
+            // Enable custom input
+            dietaryInput.disabled = false;
+            addDietaryBtn.disabled = false;
         }
+    });
+
+    // When any other option is selected, uncheck "None"
+    dietaryOptions.forEach(option => {
+        option.addEventListener('change', function() {
+            if (this.checked) {
+                noneOption.checked = false;
+            }
+        });
+    });
+
+    // When adding a custom dietary requirement, uncheck "None"
+    addDietaryBtn.addEventListener('click', function() {
+        noneOption.checked = false;
     });
 });
 </script>

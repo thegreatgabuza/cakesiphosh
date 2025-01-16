@@ -189,7 +189,7 @@
 
 <!-- Checkout Modal -->
 <div class="modal fade" id="checkoutModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -199,7 +199,10 @@
             </div>
             <div class="modal-body">
                 <form action="{{ url_for('place_order') }}" method="POST" id="checkoutForm">
-                    <!-- Cart Summary -->
+                    <div class="row">
+                        <!-- Left Column: Order Summary and Payment -->
+                        <div class="col-md-6">
+                            <!-- Order Summary -->
                     <div class="card mb-3">
                         <div class="card-body">
                             <h6 class="card-title">Order Summary</h6>
@@ -223,98 +226,117 @@
                         </div>
                     </div>
 
-                    <!-- Payment Method -->
-                    <div class="mb-3">
-                        <label class="form-label">Payment Method</label>
-                        <select class="form-select" name="payment_method" id="paymentMethod" required>
-                            <option value="">Select payment method</option>
-                            <option value="manual">Manual Payment (Upload Proof)</option>
-                            <option value="gateway">Pay Online (Credit/Debit Card)</option>
-                        </select>
-                    </div>
+                            <!-- Payment Method -->
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Payment Method</h6>
+                                    <select class="form-select mb-3" name="payment_method" id="paymentMethod" required>
+                                        <option value="">Select payment method</option>
+                                        <option value="manual">Manual Payment (Upload Proof)</option>
+                                        <option value="gateway">Pay Online (Credit/Debit Card)</option>
+                                    </select>
 
-                    <!-- Manual Payment Section -->
-                    <div id="manualPaymentSection" style="display: none;">
-                        <div class="mb-3">
-                            <label class="form-label">Proof of Payment</label>
-                            <input type="file" class="form-control" name="proof_of_payment" id="proofOfPayment" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
-                            <small class="text-muted">
-                                Accepted formats: PDF, Word documents (DOC/DOCX), Images (PNG/JPG)
-                            </small>
+                                    <!-- Manual Payment Section -->
+                                    <div id="manualPaymentSection" style="display: none;">
+                            <div class="mb-3">
+                                            <label class="form-label">Proof of Payment</label>
+                                            <input type="file" class="form-control" name="proof_of_payment" id="proofOfPayment" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                                            <small class="text-muted">
+                                                Accepted formats: PDF, Word documents (DOC/DOCX), Images (PNG/JPG)
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Online Payment Section -->
+                                    <div id="onlinePaymentSection" style="display: none;">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <div class="mb-4">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <label class="form-label mb-0">Card Number</label>
+                                                        <div class="card-brands">
+                                                            <img src="https://img.icons8.com/color/48/000000/visa.png" class="card-brand-icon" id="visaIcon" style="opacity: 0.3; height: 24px;">
+                                                            <img src="https://img.icons8.com/color/48/000000/mastercard.png" class="card-brand-icon" id="mastercardIcon" style="opacity: 0.3; height: 24px;">
+                                                            <img src="https://img.icons8.com/color/48/000000/amex.png" class="card-brand-icon" id="amexIcon" style="opacity: 0.3; height: 24px;">
+                                                        </div>
+                                                    </div>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">
+                                                            <i class="bi bi-credit-card"></i>
+                                                        </span>
+                                                        <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Expiry Date</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">
+                                                                <i class="bi bi-calendar"></i>
+                                                            </span>
+                                                            <input type="text" class="form-control" id="cardExpiry" placeholder="MM/YY" maxlength="5">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">CVV</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">
+                                                                <i class="bi bi-lock"></i>
+                                                            </span>
+                                                            <input type="password" class="form-control" id="cardCvv" placeholder="123" maxlength="3">
+                                                            <button class="btn btn-outline-secondary" type="button" id="toggleCvv">
+                                                                <i class="bi bi-eye"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Cardholder Name</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">
+                                                            <i class="bi bi-person"></i>
+                                                        </span>
+                                                        <input type="text" class="form-control" id="cardholderName" placeholder="John Doe">
+                                                    </div>
+                                                </div>
+                                                <div class="payment-card-preview mt-4">
+                                                    <div class="card bg-primary text-white" style="border-radius: 15px;">
+                                                        <div class="card-body">
+                                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                                <img src="https://img.icons8.com/color/48/000000/chip-card.png" style="height: 40px;">
+                                                                <span id="previewCardBrand"></span>
+                                                            </div>
+                                                            <div class="card-number mb-3" id="previewCardNumber">•••• •••• •••• ••••</div>
+                                                            <div class="d-flex justify-content-between">
+                                                                <div>
+                                                                    <small class="d-block text-uppercase">Card Holder</small>
+                                                                    <div id="previewCardHolder">JOHN DOE</div>
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <small class="d-block text-uppercase">Expires</small>
+                                                                    <div id="previewCardExpiry">MM/YY</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Online Payment Section -->
-                    <div id="onlinePaymentSection" style="display: none;">
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <div class="mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <label class="form-label mb-0">Card Number</label>
-                                        <div class="card-brands">
-                                            <img src="https://img.icons8.com/color/48/000000/visa.png" class="card-brand-icon" id="visaIcon" style="opacity: 0.3; height: 24px;">
-                                            <img src="https://img.icons8.com/color/48/000000/mastercard.png" class="card-brand-icon" id="mastercardIcon" style="opacity: 0.3; height: 24px;">
-                                            <img src="https://img.icons8.com/color/48/000000/amex.png" class="card-brand-icon" id="amexIcon" style="opacity: 0.3; height: 24px;">
-                                        </div>
-                                    </div>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="bi bi-credit-card"></i>
-                                        </span>
-                                        <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Expiry Date</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-calendar"></i>
-                                            </span>
-                                            <input type="text" class="form-control" id="cardExpiry" placeholder="MM/YY" maxlength="5">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">CVV</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-lock"></i>
-                                            </span>
-                                            <input type="password" class="form-control" id="cardCvv" placeholder="123" maxlength="3">
-                                            <button class="btn btn-outline-secondary" type="button" id="toggleCvv">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Cardholder Name</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="bi bi-person"></i>
-                                        </span>
-                                        <input type="text" class="form-control" id="cardholderName" placeholder="John Doe">
-                                    </div>
-                                </div>
-                                <div class="payment-card-preview mt-4">
-                                    <div class="card bg-primary text-white" style="border-radius: 15px;">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                                <img src="https://img.icons8.com/color/48/000000/chip-card.png" style="height: 40px;">
-                                                <span id="previewCardBrand"></span>
-                                            </div>
-                                            <div class="card-number mb-3" id="previewCardNumber">•••• •••• •••• ••••</div>
-                                            <div class="d-flex justify-content-between">
-                                                <div>
-                                                    <small class="d-block text-uppercase">Card Holder</small>
-                                                    <div id="previewCardHolder">JOHN DOE</div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <small class="d-block text-uppercase">Expires</small>
-                                                    <div id="previewCardExpiry">MM/YY</div>
-                                                </div>
-                                            </div>
-                                        </div>
+                        <!-- Right Column: Suggested Products -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title d-flex align-items-center">
+                                        <i class="bi bi-gift text-primary me-2"></i>
+                                        You Might Also Like
+                                    </h6>
+                                    <div class="row g-3" id="suggestedProducts">
+                                        <!-- Suggested products will be loaded here -->
                                     </div>
                                 </div>
                             </div>
@@ -322,19 +344,16 @@
                     </div>
 
                     <!-- Delivery Method -->
-                            <div class="mb-3">
-                                <label class="form-label">Delivery Method</label>
-                        <select class="form-select" name="delivery_method" id="deliveryMethod" required>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">Delivery Method</h6>
+                            <select class="form-select mb-3" name="delivery_method" id="deliveryMethod" required>
                                     <option value="pickup">Pickup</option>
                                     <option value="delivery">Delivery</option>
                                 </select>
-                            </div>
 
-                    <!-- Delivery Date Selection -->
-                    <div class="mb-3" id="deliveryDateSection" style="display: none;">
-                        <label class="form-label">Delivery Date</label>
-                        <div class="card">
-                            <div class="card-body">
+                            <!-- Delivery Date Selection -->
+                            <div id="deliveryDateSection" style="display: none;">
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <div class="form-check delivery-option">
@@ -400,9 +419,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                </div>
+                            </div>
 
-                                <!-- Custom Date Selection (for Flexible Delivery) -->
+                                <!-- Custom Date Selection -->
                                 <div id="customDateSection" class="mt-3">
                                     <label class="form-label">Select Preferred Date</label>
                                     <input type="date" class="form-control" name="preferred_delivery_date" id="preferredDate">
@@ -412,34 +431,29 @@
                                 </div>
                             </div>
                         </div>
-                            </div>
+                    </div>
 
-                    <!-- Delivery Details (hidden by default) -->
+                    <!-- Delivery Details -->
                             <div id="deliveryDetails" style="display: none;">
-                                <div class="mb-3">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Delivery Details</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
                                     <label class="form-label">Full Name</label>
                             <input type="text" class="form-control" name="customer_name">
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Age</label>
-                            <input type="number" class="form-control" name="customer_age">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Contact Number</label>
+                                        <input type="tel" class="form-control" name="contact_number">
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Gender</label>
-                            <select class="form-select" name="customer_gender">
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
+                                    <div class="col-12">
                                     <label class="form-label">Delivery Address</label>
                             <textarea class="form-control" name="delivery_address" rows="3"></textarea>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Contact Number</label>
-                            <input type="tel" class="form-control" name="contact_number">
                                 </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="text-end">
@@ -1011,119 +1025,317 @@ function convertFileToBase64(file) {
 }
 
 function proceedToCheckout() {
-    // Reset form state
-    const checkoutForm = document.querySelector('#checkoutModal form');
-    checkoutForm.reset();
-    
-    // Reset delivery details
+    try {
+        // Show modal first
+        const modal = new bootstrap.Modal(document.getElementById('checkoutModal'));
+        modal.show();
+
+        // Reset form state after modal is shown
+        const checkoutForm = document.querySelector('#checkoutModal form');
+        if (checkoutForm) {
+            checkoutForm.reset();
+        }
+
+        // Reset payment sections
+        const manualPaymentSection = document.getElementById('manualPaymentSection');
+        const onlinePaymentSection = document.getElementById('onlinePaymentSection');
+        if (manualPaymentSection) manualPaymentSection.style.display = 'none';
+        if (onlinePaymentSection) onlinePaymentSection.style.display = 'none';
+
+        // Reset payment method
+        const paymentMethod = document.getElementById('paymentMethod');
+        if (paymentMethod) paymentMethod.value = '';
+
+        // Reset file input
+        const proofOfPayment = document.getElementById('proofOfPayment');
+        if (proofOfPayment) proofOfPayment.value = '';
+
+        // Reset delivery method
+        const deliveryMethod = document.getElementById('deliveryMethod');
+        if (deliveryMethod) {
+            deliveryMethod.value = 'pickup';
+            // Trigger change event to update form
+            deliveryMethod.dispatchEvent(new Event('change'));
+        }
+
+        // Reset delivery details
     const deliveryDetails = document.getElementById('deliveryDetails');
-    const deliveryInputs = deliveryDetails.querySelectorAll('input, select, textarea');
-    deliveryInputs.forEach(input => {
+        if (deliveryDetails) {
+            deliveryDetails.style.display = 'none';
+            const inputs = deliveryDetails.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
         input.value = '';
         input.required = false;
     });
-    deliveryDetails.style.display = 'none';
-    
-    // Reset delivery method
-    document.getElementById('deliveryMethod').value = 'pickup';
-    
-    // Reset file input
-    document.getElementById('proofOfPayment').value = '';
-    
-    // Update order summary with current cart items
-    updateOrderSummary();
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('checkoutModal'));
-    modal.show();
+        }
+
+        // Reset delivery date section
+        const deliveryDateSection = document.getElementById('deliveryDateSection');
+        if (deliveryDateSection) {
+            deliveryDateSection.style.display = 'none';
+        }
+
+        // Update order summary
+        updateOrderSummary();
+
+        // Load suggested products
+        loadSuggestedProducts();
+    } catch (error) {
+        console.error('Error in proceedToCheckout:', error);
+        showToast('Error', 'There was an error processing your checkout. Please try again.', 'error');
+    }
 }
 
 function updateOrderSummary() {
-    const cartItems = document.querySelectorAll('.cart-item');
-    const orderSummaryContainer = document.querySelector('#checkoutModal .card-body');
-    let summaryHTML = '<h6 class="card-title">Order Summary</h6>';
-    let total = 0;
+    try {
+        const cartItems = document.querySelectorAll('.cart-item');
+        const orderSummaryContainer = document.querySelector('#checkoutModal .card-body');
+        if (!orderSummaryContainer) return;
 
-    cartItems.forEach(item => {
-        const name = item.querySelector('h6').textContent;
-        const price = parseFloat(item.querySelector('.item-price').dataset.price);
-        const quantity = parseInt(item.querySelector('.quantity-input').value);
-        const subtotal = price * quantity;
-        total += subtotal;
+        let summaryHTML = '<h6 class="card-title">Order Summary</h6>';
+        let subtotal = 0;
+
+        cartItems.forEach(item => {
+            const name = item.querySelector('h6').textContent;
+            const price = parseFloat(item.querySelector('.item-price').dataset.price);
+            const quantity = parseInt(item.querySelector('.quantity-input').value);
+            const itemSubtotal = price * quantity;
+            subtotal += itemSubtotal;
+
+            summaryHTML += `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <input type="hidden" name="items" value="${item.dataset.productId}">
+                        <span>${name} × ${quantity}</span>
+                    </div>
+                    <span>R${itemSubtotal.toFixed(2)}</span>
+                </div>
+            `;
+        });
+
+        const tax = subtotal * 0.15;
+        const total = subtotal + tax;
 
         summaryHTML += `
+            <hr>
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                    <input type="hidden" name="items" value="${item.dataset.productId}">
-                    <span>${name} × ${quantity}</span>
-                </div>
+                <span>Subtotal</span>
                 <span>R${subtotal.toFixed(2)}</span>
             </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Tax (15%)</span>
+                <span>R${tax.toFixed(2)}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>Total:</strong>
+                <strong id="checkoutTotal">R${total.toFixed(2)}</strong>
+            </div>
+            <input type="hidden" name="total" value="${total.toFixed(2)}">
         `;
-    });
 
-    const tax = total * 0.15;
-    const finalTotal = total + tax;
-
-    summaryHTML += `
-        <hr>
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Subtotal</span>
-            <span>R${total.toFixed(2)}</span>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Tax (15%)</span>
-            <span>R${tax.toFixed(2)}</span>
-        </div>
-        <div class="d-flex justify-content-between align-items-center">
-            <strong>Total:</strong>
-            <strong>R${finalTotal.toFixed(2)}</strong>
-        </div>
-        <input type="hidden" name="total" value="${finalTotal.toFixed(2)}">
-    `;
-
-    orderSummaryContainer.innerHTML = summaryHTML;
+        orderSummaryContainer.innerHTML = summaryHTML;
+    } catch (error) {
+        console.error('Error in updateOrderSummary:', error);
+        showToast('Error', 'There was an error updating your order summary. Please try again.', 'error');
+    }
 }
 
-function processDummyPayment() {
-    return new Promise((resolve, reject) => {
-        // Show processing message
-        showToast('Info', 'Processing payment...', 'info');
+// Function to add suggested product to checkout
+async function addToCheckout(productId, productName, productPrice) {
+    try {
+        // First add to cart via API
+        const response = await fetch(`/cart/add/${productId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to add product to cart');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to add product to cart');
+        }
+
+        // Update cart badge count
+        const cartBadges = document.querySelectorAll('.badge');
+        cartBadges.forEach(badge => {
+            const currentCount = parseInt(badge.textContent || '0');
+            badge.textContent = currentCount + 1;
+            badge.style.display = 'inline';
+        });
+
+        // Add to order summary in modal
+        const orderSummary = document.querySelector('#checkoutModal .card-body');
+        const hrElement = orderSummary.querySelector('hr');
         
-        // Simulate payment processing delay
-        setTimeout(() => {
-            // Validate card details
-            const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-            const cardExpiry = document.getElementById('cardExpiry').value;
-            const cardCvv = document.getElementById('cardCvv').value;
-            const cardholderName = document.getElementById('cardholderName').value;
-            
-            if (!cardNumber || !cardExpiry || !cardCvv || !cardholderName) {
-                reject(new Error('Please fill in all card details'));
-                return;
-            }
-            
-            if (cardNumber.length !== 16) {
-                reject(new Error('Invalid card number'));
-                return;
-            }
-            
-            if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
-                reject(new Error('Invalid expiry date format (MM/YY)'));
-                return;
-            }
-            
-            if (cardCvv.length !== 3) {
-                reject(new Error('Invalid CVV'));
-                return;
-            }
-            
-            // Simulate successful payment
-            showToast('Success', 'Payment processed successfully!', 'success');
-            resolve();
-        }, 2000);
-    });
+        // Create new item element
+        const newItem = document.createElement('div');
+        newItem.className = 'd-flex justify-content-between align-items-center mb-2';
+        newItem.innerHTML = `
+            <div>
+                <input type="hidden" name="items" value="${productId}">
+                <span>${productName} × 1</span>
+            </div>
+            <span>R${productPrice.toFixed(2)}</span>
+        `;
+        
+        // Insert before the hr element
+        if (hrElement) {
+            hrElement.parentElement.insertBefore(newItem, hrElement);
+        }
+
+        // Update totals
+        const currentTotal = parseFloat(document.querySelector('input[name="total"]').value || '0');
+        const newSubtotal = currentTotal + productPrice;
+        const tax = newSubtotal * 0.15;
+        const total = newSubtotal + tax;
+
+        // Update the summary section
+        const summarySection = `
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Subtotal</span>
+                <span>R${newSubtotal.toFixed(2)}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Tax (15%)</span>
+                <span>R${tax.toFixed(2)}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>Total:</strong>
+                <strong id="checkoutTotal">R${total.toFixed(2)}</strong>
+            </div>
+            <input type="hidden" name="total" value="${total.toFixed(2)}">
+        `;
+
+        // Add the summary section
+        if (hrElement) {
+            const summaryDiv = document.createElement('div');
+            summaryDiv.innerHTML = summarySection;
+            hrElement.parentElement.appendChild(summaryDiv);
+            hrElement.remove(); // Remove the old hr element
+        }
+
+        // Update cart offcanvas
+        const cartItemsContainer = document.querySelector('.cart-items-container');
+        if (cartItemsContainer) {
+            const newCartItem = document.createElement('div');
+            newCartItem.className = 'card mb-3 cart-item shadow-sm';
+            newCartItem.dataset.productId = productId;
+            newCartItem.innerHTML = `
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center">
+                        <img src="${data.image_url || '/static/images/placeholder.jpg'}" 
+                             class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1">${productName}</h6>
+                                <button class="btn btn-link text-danger p-0" onclick="removeFromCart('${productId}')">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <p class="mb-2 text-muted item-price" data-price="${productPrice}">
+                                R${productPrice.toFixed(2)} each
+                            </p>
+                            <div class="d-flex align-items-center">
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <button class="btn btn-outline-primary decrease-quantity">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" class="form-control quantity-input" 
+                                           value="1" min="1" style="text-align: center;">
+                                    <button class="btn btn-outline-primary increase-quantity">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                <span class="ms-3 text-primary fw-bold">
+                                    R${productPrice.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            cartItemsContainer.appendChild(newCartItem);
+
+            // Update cart total
+            updateCartTotal();
+        }
+
+        // Show success message
+        showToast('Success', 'Product added to cart!', 'success');
+        
+        // Refresh suggested products
+        loadSuggestedProducts();
+    } catch (error) {
+        console.error('Error in addToCheckout:', error);
+        showToast('Error', 'Failed to add product to cart', 'error');
+    }
 }
+
+// Function to load suggested products
+async function loadSuggestedProducts() {
+    try {
+        const currentItems = Array.from(document.querySelectorAll('input[name="items"]')).map(input => input.value);
+        
+        const response = await fetch('/api/suggested-products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_items: currentItems
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to load suggestions');
+        
+        const products = await response.json();
+        const container = document.getElementById('suggestedProducts');
+        container.innerHTML = ''; // Clear existing suggestions
+        
+        products.forEach(product => {
+            const card = document.createElement('div');
+            card.className = 'col-12 mb-3';
+            card.innerHTML = `
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="row g-0">
+                        <div class="col-4">
+                            <img src="${product.image_url || '/static/images/placeholder.jpg'}" 
+                                 class="card-img-top h-100" alt="${product.name}"
+                                 style="object-fit: cover;">
+                        </div>
+                        <div class="col-8">
+                            <div class="card-body">
+                                <h6 class="card-title mb-1">${product.name}</h6>
+                                <p class="card-text text-muted small mb-2">${product.description || ''}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-primary fw-bold">R${product.price.toFixed(2)}</span>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="addToCheckout('${product.id}', '${product.name}', ${product.price})">
+                                        <i class="bi bi-plus-circle me-1"></i>Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+        showToast('Error', 'Failed to load suggested products', 'error');
+    }
+}
+
+// Load suggested products when checkout modal opens
+document.getElementById('checkoutModal').addEventListener('show.bs.modal', function() {
+    loadSuggestedProducts();
+});
 </script>
 
 <style>
@@ -1250,6 +1462,46 @@ function processDummyPayment() {
     }
     100% {
         background-position: 40px 40px;
+    }
+}
+
+/* Updated styles for suggested products in checkout */
+#suggestedProducts .card {
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#suggestedProducts .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+#suggestedProducts .card-img-top {
+    height: 180px; /* Increased height */
+    object-fit: cover;
+    border-top-left-radius: calc(0.375rem - 1px);
+    border-top-right-radius: calc(0.375rem - 1px);
+}
+
+#suggestedProducts .card-body {
+    padding: 1rem;
+}
+
+#suggestedProducts .card-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+#suggestedProducts .card-text {
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+/* Make the modal larger on bigger screens */
+@media (min-width: 992px) {
+    .modal-lg {
+        max-width: 1000px;
     }
 }
 </style>

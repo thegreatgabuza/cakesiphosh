@@ -1,5 +1,5 @@
-<!-- Chat Widget -->
-<div id="chat-widget" class="chat-widget">
+{% block content %}
+<div class="chat-widget">
     <!-- Chat Toggle Button -->
     <button id="chat-toggle" class="chat-toggle">
         <i class="bi bi-chat-dots-fill"></i>
@@ -16,23 +16,18 @@
                 <button id="chat-minimize" class="chat-control" title="Minimize">
                     <i class="bi bi-dash-lg"></i>
                 </button>
-                <button id="chat-cancel" class="chat-control" title="End Chat">
-                    <i class="bi bi-x-circle-fill"></i>
+                <button id="chat-close" class="chat-control" title="Close">
+                    <i class="bi bi-x-lg"></i>
                 </button>
             </div>
         </div>
-        <div id="chat-messages" class="chat-messages">
-            <div class="message bot">
-                <i class="bi bi-robot me-2"></i>
-                Hello! 👋 Welcome to Cake Siphosh! How can I assist you today?
-            </div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="chat-input-field" placeholder="Type your message...">
-            <button id="chat-send">
+        <div id="chatMessages" class="chat-messages"></div>
+        <form id="chatForm" class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message..." required>
+            <button type="submit" id="sendButton">
                 <i class="bi bi-send-fill"></i>
             </button>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -121,10 +116,6 @@
     transform: scale(1.1);
 }
 
-#chat-cancel:hover {
-    color: #ffd4e5;
-}
-
 .chat-messages {
     flex-grow: 1;
     padding: 15px;
@@ -141,20 +132,21 @@
     border-radius: 15px;
     margin: 5px 0;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    animation: fadeIn 0.3s ease-out;
 }
 
-.message.bot {
-    background: white;
-    align-self: flex-start;
-    border-bottom-left-radius: 5px;
-    color: #333;
-}
-
-.message.user {
+.user-message {
     background: #ff69b4;
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 5px;
+}
+
+.assistant-message {
+    background: white;
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+    color: #333;
 }
 
 .chat-input {
@@ -198,19 +190,10 @@
     background-color: #ff4da6;
 }
 
-/* Animation classes */
-.slide-in {
-    animation: slideIn 0.3s ease-out;
-}
-
-.slide-out {
-    animation: slideOut 0.3s ease-out;
-}
-
-@keyframes slideIn {
+@keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -218,32 +201,13 @@
     }
 }
 
-@keyframes slideOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-}
-
-.message.error {
+.error-message {
     background: #fff2f2;
     color: #dc3545;
     border-left: 4px solid #dc3545;
-}
-
-.message.error .error-message {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.message.error .error-message i {
-    font-size: 1.2em;
-    color: #dc3545;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 4px;
 }
 
 .typing-indicator {
@@ -275,111 +239,132 @@
 }
 </style>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const chatToggle = document.getElementById('chat-toggle');
     const chatWindow = document.getElementById('chat-window');
-    const chatCancel = document.getElementById('chat-cancel');
+    const chatClose = document.getElementById('chat-close');
     const chatMinimize = document.getElementById('chat-minimize');
-    const chatInput = document.getElementById('chat-input-field');
-    const chatSend = document.getElementById('chat-send');
-    const chatMessages = document.getElementById('chat-messages');
-    let chatSession = null;
+    const chatMessages = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
 
-    // Toggle chat window
+    // Add welcome message immediately
+    addWelcomeMessage();
+    
+    // Then load chat history
+    loadChatHistory();
+
     chatToggle.addEventListener('click', () => {
         chatWindow.style.display = 'flex';
-        chatWindow.classList.add('slide-in');
-        chatInput.focus();
-        
-        // Start new chat session if none exists
-        if (!chatSession) {
-            startNewChat();
-        }
+        chatWindow.classList.add('fadeIn');
+        messageInput.focus();
     });
 
-    // Minimize chat window
     chatMinimize.addEventListener('click', () => {
-        chatWindow.classList.add('slide-out');
-        setTimeout(() => {
-            chatWindow.style.display = 'none';
-            chatWindow.classList.remove('slide-out');
-        }, 300);
+        chatWindow.style.display = 'none';
     });
 
-    // Cancel/End chat session
-    chatCancel.addEventListener('click', () => {
-        if (confirm('Are you sure you want to end this chat session? This will clear the current conversation.')) {
-            endChatSession();
-        }
+    chatClose.addEventListener('click', () => {
+        chatWindow.style.display = 'none';
     });
 
-    function startNewChat() {
-        chatSession = Date.now();
-        chatMessages.innerHTML = `
-            <div class="message bot">
-                <i class="bi bi-robot me-2"></i>
-                Hello! 👋 Welcome to Cake Siphosh! How can I assist you today?
-            </div>
-        `;
-    }
-
-    function endChatSession() {
-        chatSession = null;
-        chatWindow.classList.add('slide-out');
-        setTimeout(() => {
-            chatWindow.style.display = 'none';
-            chatWindow.classList.remove('slide-out');
-            chatMessages.innerHTML = '';
-            chatInput.value = '';
-            startNewChat();
-        }, 300);
-    }
-
-    // Send message function
-    function sendMessage() {
-        const message = chatInput.value.trim();
-        if (!message) return;
-
-        // Add user message
-        const userMessageDiv = document.createElement('div');
-        userMessageDiv.className = 'message user';
-        userMessageDiv.textContent = message;
-        chatMessages.appendChild(userMessageDiv);
-
-        // Clear input
-        chatInput.value = '';
+    function addMessage(message, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        messageDiv.textContent = message;
+        chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
-        // Show typing indicator
+    function showTypingIndicator() {
         const typingDiv = document.createElement('div');
         typingDiv.className = 'typing-indicator';
         typingDiv.innerHTML = '<span></span><span></span><span></span>';
         chatMessages.appendChild(typingDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        // Simulate bot response (replace with actual API call)
-        setTimeout(() => {
-            typingDiv.remove();
-            const botMessageDiv = document.createElement('div');
-            botMessageDiv.className = 'message bot';
-            botMessageDiv.innerHTML = `
-                <i class="bi bi-robot me-2"></i>
-                I'm processing your request about "${message}". How else can I assist you?
-            `;
-            chatMessages.appendChild(botMessageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1500);
+        return typingDiv;
     }
 
-    // Send message on button click
-    chatSend.addEventListener('click', sendMessage);
+    async function sendMessage(message) {
+        try {
+            addMessage(message, 'user');
+            const typingIndicator = showTypingIndicator();
 
-    // Send message on Enter key
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
+            const response = await fetch('/chat/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+
+            typingIndicator.remove();
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send message');
+            }
+
+            if (data.response) {
+                addMessage(data.response, 'assistant');
+            }
+        } catch (error) {
+            console.error('Chat error:', error);
+            addMessage('Error: ' + error.message, 'assistant');
         }
+    }
+
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        messageInput.value = '';
+        await sendMessage(message);
     });
+
+    async function loadChatHistory() {
+        try {
+            const response = await fetch('/chat/history');
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to load chat history');
+            }
+
+            if (data.history && data.history.length > 0) {
+                displayChatHistory(data.history);
+            }
+        } catch (error) {
+            console.error('Load history error:', error);
+            addMessage('Error: Failed to load chat history', 'assistant');
+        }
+    }
+
+    function displayChatHistory(history) {
+        chatMessages.innerHTML = '';
+        history.forEach(msg => {
+            addMessage(msg.message, msg.sender);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addWelcomeMessage() {
+        const welcomeMessage = `👋 Hello! Welcome to Cake Siphosh! How can I assist you today?
+
+I can help you with:
+• Finding the perfect cake for your occasion
+• Custom cake designs and pricing
+• Dietary requirements and allergen information
+• Order status and delivery options
+• General bakery questions`;
+        addMessage(welcomeMessage, 'assistant');
+    }
 });
-</script> 
+</script>
+{% endblock %} 

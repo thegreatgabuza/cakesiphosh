@@ -6,12 +6,19 @@
 <div class="container">
     <!-- Top Navigation -->
     <div class="d-flex justify-content-end mb-5">
-        {% if not session.user %}
-        <a href="{{ url_for('login') }}" class="btn btn-primary">Sign In</a>
-        {% else %}
+            {% if not session.user %}
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('login') }}?tab=register" class="btn btn-outline-primary">
+                <i class="bi bi-person-plus me-2"></i>Register
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-primary">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+            </a>
+            </div>
+            {% else %}
         <a href="{{ url_for('customer_dashboard' if session.user.role != 'admin' else 'admin_dashboard') }}" 
            class="btn btn-primary">Dashboard</a>
-        {% endif %}
+                {% endif %}
     </div>
 
     <!-- Products Section -->
@@ -42,9 +49,9 @@
                             <i class="bi bi-cart-plus"></i> Add to Cart
                         </button>
                         {% endif %}
-                    </div>
+    </div>
                     {% endif %}
-                    <div class="card-body">
+                <div class="card-body">
                         <div class="category-badge">{{ product.category|default('Bakery')|title }}</div>
                         <h5 class="card-title">{{ product.name }}</h5>
                         <p class="card-text text-muted">{{ product.description }}</p>
@@ -86,8 +93,8 @@
                         <i class="bi bi-heart"></i>
                         <h4>Quality Ingredients</h4>
                         <p>Only the finest ingredients for the best results</p>
-                    </div>
-                </div>
+            </div>
+        </div>
                 <div class="col-md-3">
                     <div class="feature-card">
                         <i class="bi bi-gift"></i>

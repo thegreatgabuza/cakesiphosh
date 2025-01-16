@@ -1,9 +1,14 @@
+# Environment variables
+.env
+.env.*
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -22,7 +27,6 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
 ENV/
 
 # IDE
@@ -31,33 +35,18 @@ ENV/
 *.swp
 *.swo
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-*.env
-
-# Firebase
-firebase-debug.log
-firebase-debug.*.log
-.firebase/
-serviceAccountKey.json
-*serviceAccountKey*.json
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
 logs/
-*.log.*
 
 # Local development
 instance/
 .webassets-cache
-.render/
 
-# System Files
-.DS_Store
-Thumbs.db
-
-# Render specific
-__render_build/
-.render-buildpacks/ 
+# Firebase
+serviceAccountKey.json
+firebase-debug.log 
