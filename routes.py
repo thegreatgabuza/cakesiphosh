@@ -13,9 +13,13 @@ import pandas as pd
 import base64
 from firebase_admin import firestore
 import google.generativeai as genai
+import traceback
 
 from __init__ import app, db
 from models import Order, Settings, Product, Ingredient, ProductIngredient, Cart, User, UserPreferences, Chat
+
+# Set a secret key for the session
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key-here')
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'}
@@ -1331,14 +1335,19 @@ except ValueError as ve:
 except Exception as e:
     print(f"Gemini Client Error: {str(e)}")
     print("Full error details:")
-    import traceback
     traceback.print_exc()
     model = None
 
 @app.route('/chat', methods=['GET'])
 @login_required
 def chat_interface():
-    return render_template('chat.html')
+    try:
+        return render_template('chat.html')
+    except Exception as e:
+        print(f"Chat interface error: {str(e)}")
+        traceback.print_exc()
+        flash('Error loading chat interface', 'error')
+        return redirect(url_for('index'))
 
 @app.route('/chat/send', methods=['POST'])
 def chat_with_ai():
@@ -1360,6 +1369,10 @@ def chat_with_ai():
         
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
+
+        # Initialize session if not already done
+        if 'chat_history' not in session:
+            session['chat_history'] = []
 
         # Get user preferences and recent orders for context if user is authenticated
         user_context = get_conversation_context(current_user.id, user_message) if current_user.is_authenticated else None
@@ -1396,6 +1409,7 @@ def chat_with_ai():
             chat_history = session.get('chat_history', [])
             chat_history.extend(new_messages)
             session['chat_history'] = chat_history[-10:]  # Keep last 10 messages
+            session.modified = True  # Ensure session is saved
             
             # Store in database if user is authenticated
             try:
@@ -1409,6 +1423,7 @@ def chat_with_ai():
                     })
             except Exception as db_error:
                 print(f"Database error (non-critical): {str(db_error)}")
+                traceback.print_exc()
                 
             return jsonify({
                 'response': ai_message,
