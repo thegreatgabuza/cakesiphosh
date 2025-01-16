@@ -2148,10 +2148,11 @@ def admin_birthdays():
             birthday_data = doc.to_dict()
             birthday_data['id'] = doc.id
             
-            # Parse birthday date
+            # Parse birthday date and make it timezone-aware
             birthday_date = datetime.strptime(birthday_data['birthday'], '%Y-%m-%d')
+            birthday_date = pytz.UTC.localize(birthday_date)
             
-            # Calculate next birthday
+            # Calculate next birthday (keeping timezone awareness)
             next_birthday = birthday_date.replace(year=today.year)
             if next_birthday < today:
                 next_birthday = next_birthday.replace(year=today.year + 1)
@@ -2168,8 +2169,8 @@ def admin_birthdays():
         # Calculate upcoming birthdays (next 30 days)
         upcoming_birthdays = [b for b in birthdays if b['days_until'] <= 30]
         
-        # Calculate birthdays this month
-        this_month_birthdays = [b for b in birthdays if datetime.strptime(b['birthday'], '%Y-%m-%d').month == today.month]
+        # Calculate birthdays this month (use UTC-aware today)
+        this_month_birthdays = [b for b in birthdays if datetime.strptime(b['birthday'], '%Y-%m-%d').replace(tzinfo=pytz.UTC).month == today.month]
         
         # Calculate pending emails
         pending_emails = len([b for b in birthdays if not b.get('email_sent', False) and b['days_until'] <= 14])
