@@ -1320,6 +1320,7 @@ try:
     print(f"API Key validation passed. Key starts with: {api_key[:7]}...")
     
     # Initialize OpenAI client with only the required api_key parameter
+    from openai import OpenAI
     client = OpenAI(api_key=api_key)
     
     # Test the client with a simple completion
@@ -2021,13 +2022,12 @@ def generate_ai_insights(orders, products):
             )
             
             insights = response.choices[0].message.content
-            
             return insights
             
         except Exception as e:
             print(f"Error generating AI insights: {e}")
             return "<p class='text-danger'>Error generating insights. Please try again later.</p>"
-        
+            
     except Exception as e:
         print(f"Error generating AI insights: {e}")
         return "<p class='text-danger'>Error generating insights. Please try again later.</p>"
