@@ -93,7 +93,13 @@ def zip_filter(a, b):
 @login_manager.user_loader
 def load_user(user_id):
     from models import User
-    return User.get(user_id)
+    print(f"Loading user with ID: {user_id}")
+    user = User.get(user_id)
+    if user:
+        print(f"User loaded: {user.email}, role={user.role}, admin={user.is_admin}")
+    else:
+        print(f"No user found with ID: {user_id}")
+    return user
 
 # Import routes after app initialization
 from routes import * 

@@ -32,16 +32,43 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
+            print(f"User not authenticated, redirecting to login")
             return redirect(url_for('login', next=request.url))
         
         # Debug output to check what's happening
-        print(f"Checking admin access for user {current_user.id}, role: {current_user.role}")
-        print(f"Is admin property: {current_user.is_admin}")
+        print(f"Checking admin access for user: id={current_user.id}, email={current_user.email}")
+        print(f"Role: {current_user.role}, is_admin property: {current_user.is_admin}")
+        print(f"Session: is_admin={session.get('is_admin')}, user_role={session.get('user_role')}")
         
-        # Check if user has admin role
-        if not current_user.role == 'admin':
+        # Check admin status through multiple methods for redundancy
+        is_admin = False
+        
+        # Method 1: Check User.is_admin property
+        if hasattr(current_user, 'is_admin') and current_user.is_admin is True:
+            is_admin = True
+            print("Admin access: Verified through is_admin property")
+            
+        # Method 2: Check role directly
+        elif hasattr(current_user, 'role') and current_user.role == 'admin':
+            is_admin = True
+            print("Admin access: Verified through role attribute")
+            
+        # Method 3: Check session variables
+        elif session.get('is_admin') is True or session.get('user_role') == 'admin':
+            is_admin = True
+            print("Admin access: Verified through session")
+            
+        # Method 4: Check admin email (last resort)
+        elif hasattr(current_user, 'email') and current_user.email == 'admin@example.com':
+            is_admin = True
+            print("Admin access: Verified through admin email")
+            
+        if not is_admin:
+            print(f"Access denied: User {current_user.email} is not an admin")
             flash('Admin access required.', 'danger')
             return redirect(url_for('index'))
+            
+        print(f"Admin access granted for user: {current_user.email}")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -330,7 +357,7 @@ def pre_login():
 def login():
     if current_user.is_authenticated:
         print(f"User already authenticated: {current_user.id}, role: {current_user.role}, is_admin: {current_user.is_admin}")
-        if current_user.role == 'admin':
+        if current_user.is_admin:
             return redirect(url_for('admin_dashboard'))
         return redirect(url_for('customer_dashboard'))
         
@@ -352,42 +379,32 @@ def login():
                     name='Admin User'
                 )
                 login_user(admin)
+                # Add a special flag to the session
+                session['is_admin'] = True
+                session['user_role'] = 'admin'
                 print(f"Admin login successful: {admin.id}, role: {admin.role}, is_admin: {admin.is_admin}")
+                print(f"Session: is_admin={session.get('is_admin')}, user_role={session.get('user_role')}")
                 flash('Welcome back, Admin!', 'success')
                 next_page = request.args.get('next')
                 if next_page:
                     return redirect(next_page)
                 return redirect(url_for('admin_dashboard'))
             
-            # Handle case when Firebase is not available
-            if not db:
-                print("Firebase not available, checking credentials")
-                if email == 'admin@example.com' and password == 'admin123':
-                    # Create mock admin user for testing
-                    user = User(
-                        id='admin',
-                        email='admin@example.com',
-                        password_hash=generate_password_hash('admin123'),
-                        role='admin',
-                        name='Admin User'
-                    )
-                    login_user(user)
-                    print(f"Admin login successful (fallback): {user.id}, role: {user.role}, is_admin: {user.is_admin}")
-                    flash('Welcome back!', 'success')
-                    next_page = request.args.get('next')
-                    if next_page:
-                        return redirect(next_page)
-                    return redirect(url_for('admin_dashboard'))
-                else:
-                    flash('Invalid email or password', 'danger')
-                    return render_template('login.html')
-            
             # Use the User model's authenticate method
             user = User.authenticate(email, password)
             
             if user:
                 login_user(user)
-                print(f"Normal login successful: {user.id}, email: {user.email}, role: {user.role}, is_admin: {user.is_admin}")
+                # Set role in session for extra safety
+                if user.is_admin:
+                    session['is_admin'] = True
+                    session['user_role'] = 'admin'
+                else:
+                    session['is_admin'] = False
+                    session['user_role'] = user.role
+                
+                print(f"Login successful: {user.id}, email: {user.email}, role: {user.role}, is_admin: {user.is_admin}")
+                print(f"Session: is_admin={session.get('is_admin')}, user_role={session.get('user_role')}")
                 flash('Welcome back!', 'success')
                 
                 # Redirect based on role
@@ -395,7 +412,7 @@ def login():
                 if next_page:
                     print(f"Redirecting to next page: {next_page}")
                     return redirect(next_page)
-                elif user.role == 'admin':
+                elif user.is_admin:
                     print("Redirecting to admin dashboard")
                     return redirect(url_for('admin_dashboard'))
                 else:

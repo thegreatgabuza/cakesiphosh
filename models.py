@@ -670,7 +670,15 @@ class User(UserMixin):
     
     @property
     def is_admin(self):
+        """Return True if user has admin role"""
         return self.role == 'admin'
+    
+    def get_id(self):
+        """Return the user ID as a unicode string for Flask-Login"""
+        return str(self.id)
+    
+    def __repr__(self):
+        return f'<User {self.email}, role={self.role}, admin={self.is_admin}>'
 
     @staticmethod
     def create(data):
