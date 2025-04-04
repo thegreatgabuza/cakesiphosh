@@ -49,4 +49,5 @@ instance/
 
 # Firebase
 serviceAccountKey.json
-firebase-debug.log 
+firebase-debug.log
+firebase-key.json 
