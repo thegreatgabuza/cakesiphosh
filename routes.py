@@ -1340,31 +1340,48 @@ try:
     try:
         # Use the specified model from the available list
         try:
-            # First try with Gemma 7B model
-            print("Testing with Gemma model...")
-            model = genai.GenerativeModel('models/gemma-7b-it')
-            print("Testing Gemma 7B model...")
+            # First try with Gemma 3 models
+            print("Testing with Gemma 3 model...")
+            model = genai.GenerativeModel('models/gemma-3-27b-it')
+            print("Testing Gemma 3-27B model...")
             test_response = model.generate_content("Hello")
-            print("Gemma 7B model test successful!")
+            print("Gemma 3-27B model test successful!")
         except Exception as model_error:
-            # If 7B model fails, try other Gemma models
-            print(f"Failed to initialize Gemma 7B model: {str(model_error)}")
-            print("Trying with Gemma 2B model instead...")
+            # If largest model fails, try smaller Gemma models
+            print(f"Failed to initialize Gemma 3-27B model: {str(model_error)}")
+            print("Trying with Gemma 3-12B model instead...")
             try:
-                model = genai.GenerativeModel('models/gemma-2b-it')
+                model = genai.GenerativeModel('models/gemma-3-12b-it')
                 test_response = model.generate_content("Hello")
-                print("Gemma 2B model test successful!")
+                print("Gemma 3-12B model test successful!")
             except Exception as std_model_error:
-                # If Gemma also fails, fall back to Gemini as last resort
-                print(f"Failed to initialize Gemma 2B model: {str(std_model_error)}")
-                print("Trying with Gemini model as final fallback...")
+                # If medium model fails, try the smallest model
+                print(f"Failed to initialize Gemma 3-12B model: {str(std_model_error)}")
+                print("Trying with Gemma 3-4B model as final fallback...")
                 try:
-                    model = genai.GenerativeModel('gemini-pro')
+                    model = genai.GenerativeModel('models/gemma-3-4b-it')
                     test_response = model.generate_content("Hello")
-                    print("Gemini model test successful as fallback!")
-                except Exception as fallback_error:
-                    print(f"All models failed to initialize: {str(fallback_error)}")
-                    model = None
+                    print("Gemma 3-4B model test successful!")
+                except Exception as small_model_error:
+                    # If that fails, try with the smallest Gemma model
+                    print(f"Failed to initialize Gemma 3-4B model: {str(small_model_error)}")
+                    print("Trying with Gemma 3-1B model as last resort...")
+                    try:
+                        model = genai.GenerativeModel('models/gemma-3-1b-it')
+                        test_response = model.generate_content("Hello")
+                        print("Gemma 3-1B model test successful!")
+                    except Exception as tiny_model_error:
+                        # If all Gemma models fail, try with Gemini models
+                        print(f"Failed to initialize Gemma 3-1B model: {str(tiny_model_error)}")
+                        print("Trying with Gemini 1.5 Pro model...")
+                        try:
+                            model = genai.GenerativeModel('models/gemini-1.5-pro')
+                            test_response = model.generate_content("Hello")
+                            print("Gemini 1.5 Pro model test successful!")
+                        except Exception as fallback_error:
+                            print(f"All models failed to initialize: {str(fallback_error)}")
+                            print("Application will run with limited AI functionality")
+                            model = None
         
         # Only print response if we actually have a model
         if model:
