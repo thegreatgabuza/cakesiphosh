@@ -31,8 +31,17 @@ def allowed_file(filename):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_admin:
-            abort(403)
+        if not current_user.is_authenticated:
+            return redirect(url_for('login', next=request.url))
+        
+        # Debug output to check what's happening
+        print(f"Checking admin access for user {current_user.id}, role: {current_user.role}")
+        print(f"Is admin property: {current_user.is_admin}")
+        
+        # Check if user has admin role
+        if not current_user.role == 'admin':
+            flash('Admin access required.', 'danger')
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -320,7 +329,8 @@ def pre_login():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        if current_user.is_admin:
+        print(f"User already authenticated: {current_user.id}, role: {current_user.role}, is_admin: {current_user.is_admin}")
+        if current_user.role == 'admin':
             return redirect(url_for('admin_dashboard'))
         return redirect(url_for('customer_dashboard'))
         
@@ -328,9 +338,30 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        print(f"Login attempt for email: {email}")
+        
         try:
+            # Special case for admin@example.com with admin123 password
+            if email == 'admin@example.com' and password == 'admin123':
+                print("Direct admin login detected")
+                admin = User(
+                    id='admin',
+                    email='admin@example.com',
+                    password_hash=generate_password_hash('admin123'),
+                    role='admin',
+                    name='Admin User'
+                )
+                login_user(admin)
+                print(f"Admin login successful: {admin.id}, role: {admin.role}, is_admin: {admin.is_admin}")
+                flash('Welcome back, Admin!', 'success')
+                next_page = request.args.get('next')
+                if next_page:
+                    return redirect(next_page)
+                return redirect(url_for('admin_dashboard'))
+            
             # Handle case when Firebase is not available
             if not db:
+                print("Firebase not available, checking credentials")
                 if email == 'admin@example.com' and password == 'admin123':
                     # Create mock admin user for testing
                     user = User(
@@ -341,7 +372,11 @@ def login():
                         name='Admin User'
                     )
                     login_user(user)
+                    print(f"Admin login successful (fallback): {user.id}, role: {user.role}, is_admin: {user.is_admin}")
                     flash('Welcome back!', 'success')
+                    next_page = request.args.get('next')
+                    if next_page:
+                        return redirect(next_page)
                     return redirect(url_for('admin_dashboard'))
                 else:
                     flash('Invalid email or password', 'danger')
@@ -352,46 +387,21 @@ def login():
             
             if user:
                 login_user(user)
+                print(f"Normal login successful: {user.id}, email: {user.email}, role: {user.role}, is_admin: {user.is_admin}")
                 flash('Welcome back!', 'success')
                 
                 # Redirect based on role
-                if user.role == 'admin':
+                next_page = request.args.get('next')
+                if next_page:
+                    print(f"Redirecting to next page: {next_page}")
+                    return redirect(next_page)
+                elif user.role == 'admin':
+                    print("Redirecting to admin dashboard")
                     return redirect(url_for('admin_dashboard'))
-                return redirect(url_for('customer_dashboard'))
+                else:
+                    print("Redirecting to customer dashboard")
+                    return redirect(url_for('customer_dashboard'))
             else:
-                # Special case for admin user with plain text password (for development)
-                if email == 'admin@example.com' and password == 'admin123':
-                    # Get user from Firestore if available
-                    try:
-                        admin = User.get_by_email('admin@example.com')
-                        if not admin:
-                            # Create admin user if it doesn't exist
-                            admin_data = {
-                                'email': 'admin@example.com',
-                                'password': generate_password_hash('admin123'),
-                                'role': 'admin',
-                                'name': 'Admin User'
-                            }
-                            admin_id = User.create(admin_data)
-                            admin = User.get(admin_id)
-                            
-                        login_user(admin)
-                        flash('Welcome back!', 'success')
-                        return redirect(url_for('admin_dashboard'))
-                    except Exception as admin_error:
-                        print(f"Error with admin login: {str(admin_error)}")
-                        # Fallback to manual admin creation if Firestore query fails
-                        admin = User(
-                            id='admin',
-                            email='admin@example.com',
-                            password_hash=generate_password_hash('admin123'),
-                            role='admin',
-                            name='Admin User'
-                        )
-                        login_user(admin)
-                        flash('Welcome back!', 'success')
-                        return redirect(url_for('admin_dashboard'))
-                
                 flash('Invalid email or password', 'danger')
             
         except Exception as e:
