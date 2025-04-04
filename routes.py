@@ -329,46 +329,74 @@ def login():
         password = request.form.get('password')
         
         try:
-            # Get user from Firestore
-            users_ref = db.collection('users')
-            user_query = users_ref.where('email', '==', email).limit(1).stream()
-            
-            user_found = None
-            for user_doc in user_query:
-                user_found = {
-                    'id': user_doc.id,
-                    **user_doc.to_dict()
-                }
-                break
-            
-            if user_found:
-                # For admin user with plain text password
+            # Handle case when Firebase is not available
+            if not db:
                 if email == 'admin@example.com' and password == 'admin123':
-                    is_valid = True
-                else:
-                    # For other users, verify using werkzeug's check_password_hash
-                    stored_hash = user_found.get('password_hash')
-                    is_valid = check_password_hash(stored_hash, password)
-                
-                if is_valid:
+                    # Create mock admin user for testing
                     user = User(
-                        id=user_found['id'],
-                        email=user_found['email'],
-                        name=user_found.get('name', ''),
-                        role=user_found.get('role', 'customer')
+                        id='admin',
+                        email='admin@example.com',
+                        password_hash=generate_password_hash('admin123'),
+                        role='admin',
+                        name='Admin User'
                     )
                     login_user(user)
-            flash('Welcome back!', 'success')
+                    flash('Welcome back!', 'success')
+                    return redirect(url_for('admin_dashboard'))
+                else:
+                    flash('Invalid email or password', 'danger')
+                    return render_template('login.html')
             
-            # Redirect based on role
-            if user.is_admin:
-                return redirect(url_for('admin_dashboard'))
-            return redirect(url_for('customer_dashboard'))
+            # Use the User model's authenticate method
+            user = User.authenticate(email, password)
             
-            flash('Invalid email or password', 'danger')
+            if user:
+                login_user(user)
+                flash('Welcome back!', 'success')
+                
+                # Redirect based on role
+                if user.role == 'admin':
+                    return redirect(url_for('admin_dashboard'))
+                return redirect(url_for('customer_dashboard'))
+            else:
+                # Special case for admin user with plain text password (for development)
+                if email == 'admin@example.com' and password == 'admin123':
+                    # Get user from Firestore if available
+                    try:
+                        admin = User.get_by_email('admin@example.com')
+                        if not admin:
+                            # Create admin user if it doesn't exist
+                            admin_data = {
+                                'email': 'admin@example.com',
+                                'password': generate_password_hash('admin123'),
+                                'role': 'admin',
+                                'name': 'Admin User'
+                            }
+                            admin_id = User.create(admin_data)
+                            admin = User.get(admin_id)
+                            
+                        login_user(admin)
+                        flash('Welcome back!', 'success')
+                        return redirect(url_for('admin_dashboard'))
+                    except Exception as admin_error:
+                        print(f"Error with admin login: {str(admin_error)}")
+                        # Fallback to manual admin creation if Firestore query fails
+                        admin = User(
+                            id='admin',
+                            email='admin@example.com',
+                            password_hash=generate_password_hash('admin123'),
+                            role='admin',
+                            name='Admin User'
+                        )
+                        login_user(admin)
+                        flash('Welcome back!', 'success')
+                        return redirect(url_for('admin_dashboard'))
+                
+                flash('Invalid email or password', 'danger')
             
         except Exception as e:
-            print(f"Login error: {e}")
+            print(f"Login error: {str(e)}")
+            traceback.print_exc()
             flash('Invalid email or password', 'danger')
     
     return render_template('login.html')
@@ -1598,32 +1626,52 @@ def resolve_chat(interaction_id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('customer_dashboard'))
+        
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         name = request.form.get('name')
         
+        # Validate input
+        if not email or not password or not name:
+            flash('Please fill in all required fields', 'danger')
+            return render_template('register.html')
+            
         try:
             # Check if user already exists
-            users_ref = db.collection('users')
-            existing_user = users_ref.where('email', '==', email).limit(1).get()
-            if len(list(existing_user)) > 0:
-                flash('An account with this email already exists.', 'danger')
-                return redirect(url_for('login'))
-            
-            # Redirect to pre-login to collect preferences
-            session['registration_data'] = {
+            existing_user = User.get_by_email(email)
+            if existing_user:
+                flash('Email already registered', 'danger')
+                return render_template('register.html')
+                
+            # Create new user
+            user_data = {
                 'email': email,
-                'password': password,
-                'name': name
+                'password': password,  # Will be hashed in the User.create method
+                'name': name,
+                'role': 'customer',
+                'created_at': datetime.now()
             }
-            return redirect(url_for('pre_login'))
             
+            # Create the user and get the user object back
+            user = User.create(user_data)
+            
+            if user:
+                # Log in the new user
+                login_user(user)
+                flash('Account created successfully!', 'success')
+                return redirect(url_for('customer_dashboard'))
+            else:
+                flash('Error creating account', 'danger')
+                
         except Exception as e:
             print(f"Registration error: {str(e)}")
-            flash('Error creating account. Please try again.', 'danger')
+            traceback.print_exc()
+            flash('Error creating account: ' + str(e), 'danger')
             
-    return redirect(url_for('login'))
+    return render_template('register.html')
 
 @app.route('/setup/admin', methods=['GET'])
 def setup_admin():
